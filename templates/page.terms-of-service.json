@@ -1,0 +1,30 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */{
+  "sections": {
+    "main": {
+      "type": "tovee-page",
+      "settings": {
+        "show_banner": false,
+        "eyebrow": "Tovee",
+        "title": "Terms of Service",
+        "subtitle": "",
+        "content": "<p>Welcome to Tovee. By accessing and using our website, you agree to the following terms and conditions.</p><h2>Use of Website</h2><p>You may use our website for lawful purposes only. You agree not to misuse the site or attempt to access it in unauthorized ways.</p><h2>Products & Pricing</h2><p>We strive to display accurate product information and pricing. Tovee reserves the right to correct errors and update prices without prior notice. All prices are listed in the currency shown at checkout.</p><h2>Orders</h2><p>Placing an order constitutes an offer to purchase. We reserve the right to refuse or cancel any order at our discretion. You will receive an order confirmation email once your purchase is accepted.</p><h2>Intellectual Property</h2><p>All content on this website — including text, images, logos, and product designs — is the property of Tovee and may not be reproduced without written permission.</p><h2>Limitation of Liability</h2><p>Tovee is not liable for any indirect, incidental, or consequential damages arising from the use of our products or website, to the fullest extent permitted by law.</p><h2>Contact</h2><p>Questions about these terms? Visit our <a href=\"/pages/contact\">Contact page</a>.</p>",
+        "button_label": "",
+        "button_link": "",
+        "background_color": "#FCFAF8",
+        "padding-block-start": 0,
+        "padding-block-end": 0
+      }
+    }
+  },
+  "order": [
+    "main"
+  ]
+}

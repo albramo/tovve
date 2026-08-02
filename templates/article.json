@@ -1,0 +1,45 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "section": {
+      "type": "main-blog-post",
+      "blocks": {
+        "blog-post-content": {
+          "type": "_blog-post-content",
+          "settings": {
+            "text_color": ""
+          },
+          "blocks": {}
+        }
+      },
+      "block_order": [
+        "blog-post-content"
+      ],
+      "settings": {
+        "content_direction": "column",
+        "gap": 24,
+        "background_color": "{{ settings.color_palette.background }}",
+        "padding-block-start": 32,
+        "padding-block-end": 80
+      }
+    },
+    "related-articles": {
+      "type": "related-articles",
+      "settings": {
+        "heading": "RELATED ARTICLES"
+      }
+    }
+  },
+  "order": [
+    "section",
+    "related-articles"
+  ]
+}

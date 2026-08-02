@@ -1,0 +1,465 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "tovee_hero_slider": {
+      "type": "tovee-hero-slider",
+      "blocks": {
+        "slide_1": {
+          "type": "slide",
+          "settings": {
+            "image": "shopify://shop_images/tovee-skincare-ingredients-hero-slide-02.webp",
+            "image_url": "",
+            "mobile_image_url": "",
+            "slide_link": ""
+          }
+        },
+        "slide_FQp6th": {
+          "type": "slide",
+          "settings": {
+            "image_url": "",
+            "mobile_image_url": "",
+            "slide_link": ""
+          }
+        },
+        "slide_2": {
+          "type": "slide",
+          "settings": {
+            "image_url": "",
+            "mobile_image_url": "https://images.pexels.com/photos/6620410/pexels-photo-6620410.jpeg?auto=compress&cs=tinysrgb&w=600&h=900&fit=crop",
+            "slide_link": ""
+          }
+        },
+        "slide_3": {
+          "type": "slide",
+          "settings": {
+            "image_url": "",
+            "mobile_image_url": "https://images.pexels.com/photos/3738341/pexels-photo-3738341.jpeg?auto=compress&cs=tinysrgb&w=600&h=900&fit=crop",
+            "slide_link": ""
+          }
+        }
+      },
+      "block_order": [
+        "slide_1",
+        "slide_FQp6th",
+        "slide_2",
+        "slide_3"
+      ],
+      "settings": {
+        "autoplay": true,
+        "autoplay_speed": 6,
+        "slide_height": 92,
+        "slide_height_mobile": 100,
+        "image_behavior": "full"
+      }
+    },
+    "product_list_fa6P9H": {
+      "type": "product-list",
+      "blocks": {
+        "static-header": {
+          "type": "_product-list-content",
+          "name": "t:names.header",
+          "static": true,
+          "settings": {
+            "content_direction": "row",
+            "vertical_on_mobile": false,
+            "horizontal_alignment": "space-between",
+            "vertical_alignment": "flex-end",
+            "align_baseline": true,
+            "horizontal_alignment_flex_direction_column": "flex-start",
+            "vertical_alignment_flex_direction_column": "center",
+            "gap": 12,
+            "width": "fill",
+            "custom_width": 100,
+            "width_mobile": "fill",
+            "custom_width_mobile": 100,
+            "height": "fit",
+            "custom_height": 100,
+            "background_media": "none",
+            "background_color": "",
+            "video_position": "cover",
+            "background_image_position": "cover",
+            "border": "none",
+            "border_width": 1,
+            "border_opacity": 100,
+            "border_color": "",
+            "border_radius": 0,
+            "padding-block-start": 0,
+            "padding-block-end": 0,
+            "padding-inline-start": 0,
+            "padding-inline-end": 0
+          },
+          "blocks": {
+            "product_list_text_YFtzcL": {
+              "type": "_product-list-text",
+              "name": "t:names.collection_title",
+              "settings": {
+                "text": "<h3>{{ closest.collection.title }}</h3>",
+                "width": "fit-content",
+                "max_width": "normal",
+                "alignment": "left",
+                "type_preset": "h4",
+                "font": "var(--font-body--family)",
+                "font_size": "1rem",
+                "line_height": "normal",
+                "letter_spacing": "normal",
+                "case": "none",
+                "wrap": "pretty",
+                "text_color": "",
+                "background": false,
+                "background_color": "#00000026",
+                "corner_radius": 0,
+                "padding-block-start": 0,
+                "padding-block-end": 0,
+                "padding-inline-start": 0,
+                "padding-inline-end": 0
+              },
+              "blocks": {}
+            },
+            "product_list_button_MWeP9V": {
+              "type": "_product-list-button",
+              "name": "t:names.product_list_button",
+              "settings": {
+                "label": "View all",
+                "open_in_new_tab": false,
+                "style_class": "link",
+                "custom_button_background": "{{ settings.color_palette.foreground }}",
+                "custom_button_text": "{{ settings.color_palette.background }}",
+                "custom_button_border": "{{ settings.color_palette.background }}",
+                "link_text_color": "",
+                "width": "fit-content",
+                "custom_width": 100,
+                "width_mobile": "fit-content",
+                "custom_width_mobile": 100
+              },
+              "blocks": {}
+            }
+          },
+          "block_order": [
+            "product_list_text_YFtzcL",
+            "product_list_button_MWeP9V"
+          ]
+        },
+        "static-product-card": {
+          "type": "_product-card",
+          "name": "t:names.product_card",
+          "static": true,
+          "settings": {
+            "product_card_gap": 4,
+            "background_color": "",
+            "border": "none",
+            "border_width": 1,
+            "border_opacity": 100,
+            "border_color": "",
+            "border_radius": 0,
+            "padding-block-start": 0,
+            "padding-block-end": 0,
+            "padding-inline-start": 0,
+            "padding-inline-end": 0
+          },
+          "blocks": {
+            "product_card_gallery_677WP3": {
+              "type": "_product-card-gallery",
+              "name": "t:names.product_card_media",
+              "settings": {
+                "image_ratio": "adapt",
+                "border": "none",
+                "border_width": 1,
+                "border_opacity": 100,
+                "border_color": "",
+                "border_radius": 0,
+                "padding-block-start": 0,
+                "padding-block-end": 0,
+                "padding-inline-start": 0,
+                "padding-inline-end": 0
+              },
+              "blocks": {}
+            },
+            "product_title_YXxMTj": {
+              "type": "product-title",
+              "name": "t:names.product_title",
+              "settings": {
+                "width": "100%",
+                "max_width": "normal",
+                "alignment": "left",
+                "type_preset": "rte",
+                "font": "var(--font-body--family)",
+                "font_size": "1rem",
+                "line_height": "normal",
+                "letter_spacing": "normal",
+                "case": "none",
+                "wrap": "pretty",
+                "text_color": "",
+                "background": false,
+                "background_color": "#00000026",
+                "corner_radius": 0,
+                "padding-block-start": 4,
+                "padding-block-end": 0,
+                "padding-inline-start": 0,
+                "padding-inline-end": 0
+              },
+              "blocks": {}
+            },
+            "price_JQzVV4": {
+              "type": "price",
+              "name": "t:names.product_price",
+              "settings": {
+                "show_sale_price_first": true,
+                "show_installments": false,
+                "show_tax_info": false,
+                "type_preset": "custom",
+                "width": "100%",
+                "alignment": "left",
+                "font": "var(--font-body--family)",
+                "font_size": "0.875rem",
+                "line_height": "normal",
+                "letter_spacing": "normal",
+                "case": "none",
+                "text_color": "",
+                "padding-block-start": 0,
+                "padding-block-end": 0,
+                "padding-inline-start": 0,
+                "padding-inline-end": 0
+              },
+              "blocks": {}
+            }
+          },
+          "block_order": [
+            "product_card_gallery_677WP3",
+            "product_title_YXxMTj",
+            "price_JQzVV4"
+          ]
+        }
+      },
+      "name": "Featured collection",
+      "settings": {
+        "collection": "all",
+        "layout_type": "grid",
+        "carousel_on_mobile": false,
+        "max_products": 8,
+        "columns": 4,
+        "mobile_columns": "2",
+        "mobile_card_size": "60cqw",
+        "columns_gap": 8,
+        "rows_gap": 24,
+        "icons_style": "arrow",
+        "icons_shape": "none",
+        "section_width": "page-width",
+        "horizontal_alignment": "flex-start",
+        "gap": 28,
+        "background_color": "{{ settings.color_palette.background }}",
+        "padding-block-start": 48,
+        "padding-block-end": 48
+      }
+    },
+    "1783705953ac90a959": {
+      "type": "_blocks",
+      "settings": {
+        "content_direction": "column",
+        "vertical_on_mobile": true,
+        "horizontal_alignment": "flex-start",
+        "vertical_alignment": "center",
+        "align_baseline": false,
+        "horizontal_alignment_flex_direction_column": "flex-start",
+        "vertical_alignment_flex_direction_column": "center",
+        "gap": 12,
+        "section_width": "page-width",
+        "section_height": "",
+        "section_height_custom": 50,
+        "background_media": "none",
+        "background_color": "",
+        "video_position": "cover",
+        "background_image_position": "cover",
+        "toggle_overlay": false,
+        "overlay_color": "#00000026",
+        "overlay_style": "solid",
+        "gradient_direction": "to top",
+        "border": "none",
+        "border_width": 1,
+        "border_opacity": 100,
+        "border_color": "",
+        "border_radius": 0,
+        "padding-block-start": 0,
+        "padding-block-end": 0
+      }
+    },
+    "tovee_ceramides_info_RPTmUE": {
+      "type": "tovee-ceramides-info",
+      "blocks": {
+        "info_card_mB6qEw": {
+          "type": "info_card",
+          "settings": {
+            "icon": "shield",
+            "title": "Barrier Defense",
+            "text": "Locks in essential hydration while shielding your delicate skin barrier from external aggressors."
+          }
+        },
+        "info_card_hBk4LU": {
+          "type": "info_card",
+          "settings": {
+            "icon": "droplet",
+            "title": "Intense Moisture",
+            "text": "Prevents transepidermal moisture loss, keeping your skin continuously plumped and hydrated."
+          }
+        },
+        "info_card_KmUrjh": {
+          "type": "info_card",
+          "settings": {
+            "icon": "sparkle",
+            "title": "Anti-Aging Effect",
+            "text": "Smooths the appearance of fine lines and boosts natural suppleness for a youthful glow."
+          }
+        },
+        "info_card_PHidJe": {
+          "type": "info_card",
+          "settings": {
+            "icon": "leaf",
+            "title": "Soothe & Calm",
+            "text": "Reduces redness, calms skin irritation, and restores optimal lipid balance to sensitive skin."
+          }
+        }
+      },
+      "block_order": [
+        "info_card_mB6qEw",
+        "info_card_hBk4LU",
+        "info_card_KmUrjh",
+        "info_card_PHidJe"
+      ],
+      "name": "Tovee Ceramides Info",
+      "settings": {
+        "background_color": "#ffffff",
+        "text_color": "#2e0808",
+        "heading_color": "",
+        "accent_color": "#c49292",
+        "subtitle": "Skincare Essentials",
+        "title": "Why Ceramides Matter",
+        "description": "Ceramides are natural lipids that make up over 50% of the skin’s barrier. They act as the essential glue holding skin cells together for a healthy, glowing complexion.",
+        "padding_top": 80,
+        "padding_bottom": 80
+      }
+    },
+    "178465195918eb2f13": {
+      "type": "_blocks",
+      "settings": {
+        "content_direction": "column",
+        "vertical_on_mobile": true,
+        "horizontal_alignment": "flex-start",
+        "vertical_alignment": "center",
+        "align_baseline": false,
+        "horizontal_alignment_flex_direction_column": "flex-start",
+        "vertical_alignment_flex_direction_column": "center",
+        "gap": 12,
+        "section_width": "page-width",
+        "section_height": "",
+        "section_height_custom": 50,
+        "background_media": "none",
+        "background_color": "",
+        "video_position": "cover",
+        "background_image_position": "cover",
+        "toggle_overlay": false,
+        "overlay_color": "#00000026",
+        "overlay_style": "solid",
+        "gradient_direction": "to top",
+        "border": "none",
+        "border_width": 1,
+        "border_opacity": 100,
+        "border_color": "",
+        "border_radius": 0,
+        "padding-block-start": 0,
+        "padding-block-end": 0
+      }
+    },
+    "1784652506c2590cb0": {
+      "type": "_blocks",
+      "settings": {
+        "content_direction": "column",
+        "vertical_on_mobile": true,
+        "horizontal_alignment": "flex-start",
+        "vertical_alignment": "center",
+        "align_baseline": false,
+        "horizontal_alignment_flex_direction_column": "flex-start",
+        "vertical_alignment_flex_direction_column": "center",
+        "gap": 12,
+        "section_width": "page-width",
+        "section_height": "",
+        "section_height_custom": 50,
+        "background_media": "none",
+        "background_color": "",
+        "video_position": "cover",
+        "background_image_position": "cover",
+        "toggle_overlay": false,
+        "overlay_color": "#00000026",
+        "overlay_style": "solid",
+        "gradient_direction": "to top",
+        "border": "none",
+        "border_width": 1,
+        "border_opacity": 100,
+        "border_color": "",
+        "border_radius": 0,
+        "padding-block-start": 0,
+        "padding-block-end": 0
+      }
+    },
+    "tovee_trust_badges": {
+      "type": "tovee-trust-badges",
+      "blocks": {
+        "badge_1": {
+          "type": "badge",
+          "settings": {
+            "image": "shopify:\/\/shop_images\/tovee-_-_-_-made-in-egypt-icon.webp",
+            "icon": "location",
+            "title": "Made in Egypt",
+            "text": "PROUDLY MADE LOCALLY"
+          }
+        },
+        "badge_2": {
+          "type": "badge",
+          "settings": {
+            "image": "shopify:\/\/shop_images\/tovee-science-driven-formulas-icon.webp-ezgif.com-resize_82baa2c0-75e6-4a07-a99c-e781aa9f56c2.webp",
+            "icon": "beaker",
+            "title": "Science-Driven Formulas",
+            "text": "BACKED BY RESEARCH"
+          }
+        },
+        "badge_3": {
+          "type": "badge",
+          "settings": {
+            "image": "shopify:\/\/shop_images\/tovee-_-_-_-carefully-selected-ingredients-icon.webp",
+            "icon": "leaf",
+            "title": "Pure Ingredients",
+            "text": "FOR HEALTHY, BALANCED SKIN"
+          }
+        }
+      },
+      "block_order": [
+        "badge_1",
+        "badge_2",
+        "badge_3"
+      ],
+      "settings": {
+        "background_color": "#FAF8F6",
+        "text_color": "#2e0808",
+        "muted_color": "#6d2a2a",
+        "accent_color": "#6d2a2a",
+        "padding_top": 24,
+        "padding_bottom": 24
+      }
+    }
+  },
+  "order": [
+    "tovee_hero_slider",
+    "tovee_trust_badges",
+    "product_list_fa6P9H",
+    "1783705953ac90a959",
+    "tovee_ceramides_info_RPTmUE",
+    "178465195918eb2f13",
+    "1784652506c2590cb0"
+  ]
+}

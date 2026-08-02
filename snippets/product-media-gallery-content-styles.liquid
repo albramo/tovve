@@ -1,0 +1,247 @@
+{%- doc -%}
+  Product media gallery content styles extracted into a standalone snippet.
+
+  @example
+  {% render 'product-media-gallery-content-styles' %}
+{%- enddoc -%}
+
+{% stylesheet %}
+  /* Thumbnail Gallery Styles */
+  .thumbnail-gallery {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .thumbnail-gallery__main {
+    width: 100%;
+    position: relative;
+    overflow: hidden;        /* needed to clip horizontal swipe animation */
+    background-color: var(--color-background);
+    border-radius: 12px !important;
+    border: 1.5px solid #2e0808 !important;
+    box-shadow: 0 4px 16px rgba(46, 8, 8, 0.08) !important;
+  }
+
+  /* Main product media image container: burgundy border & light rounded corners */
+  media-gallery .product-media-container,
+  media-gallery .slideshow__slide,
+  media-gallery .media-gallery__grid .product-media-container {
+    border: 1.5px solid #2e0808 !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    box-shadow: 0 4px 16px rgba(46, 8, 8, 0.06) !important;
+  }
+
+  .thumbnail-gallery__main-image-wrapper {
+    width: 100%;
+    height: auto;            /* let it grow with the image */
+    display: block;
+  }
+
+  /* Hidden images */
+  .thumbnail-gallery__main-image-wrapper--hidden {
+    display: none;
+  }
+
+  /* Fading out - keep visible but fade */
+  .thumbnail-gallery__main-image-wrapper--fading-out {
+    display: flex;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+  }
+
+  .thumbnail-gallery__main img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    will-change: transform;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  /* Thumbnails row */
+  .thumbnail-gallery__thumbnails {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 4px 2px;
+    scrollbar-width: none;
+  }
+
+  .thumbnail-gallery__thumbnails::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Individual thumbnail */
+  .thumbnail-gallery__thumbnail {
+    flex-shrink: 0;
+    width: 72px;
+    height: 72px;
+    border: 2px solid transparent;
+    border-radius: var(--media-radius, 4px);
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
+    background: none;
+    padding: 0;
+    position: relative;
+  }
+
+  .thumbnail-gallery__thumbnail::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0);
+    transition: background 0.2s ease;
+    pointer-events: none;
+  }
+
+  .thumbnail-gallery__thumbnail:hover {
+    border-color: rgba(var(--color-foreground-rgb, 0,0,0), 0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  }
+
+  .thumbnail-gallery__thumbnail--active {
+    border-color: var(--color-foreground, #000);
+    box-shadow: 0 0 0 1px var(--color-foreground, #000);
+    transform: translateY(-2px);
+  }
+
+  .thumbnail-gallery__thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+  }
+
+  .thumbnail-gallery__thumbnail:hover img {
+    transform: scale(1.05);
+  }
+
+  /* Original grid styles for fallback */
+  media-gallery:where(.media-gallery--grid) .media-gallery__grid {
+    display: none;
+  }
+
+  /* Hide the slideshow on ALL sizes in grid mode - thumbnail gallery replaces it */
+  media-gallery:is(.media-gallery--grid) slideshow-component {
+    display: none;
+  }
+
+  media-gallery.media-gallery--grid .media-gallery__grid .product-media-container {
+    /* Needed for safari to stretch to full grid height */
+    height: 100%;
+  }
+
+  media-gallery.media-gallery--grid .media-gallery__grid--single {
+    display: block;
+  }
+
+  @media screen and (min-width: 750px) {
+    .thumbnail-gallery__thumbnails {
+      gap: 12px;
+    }
+
+    .thumbnail-gallery__thumbnail {
+      width: 90px;
+      height: 90px;
+    }
+
+    .media-gallery--two-column .media-gallery__grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    media-gallery:where(.media-gallery--grid) .media-gallery__grid {
+      display: grid;
+    }
+  }
+
+  /* Mobile: smaller thumbnails & white space between image and screen edges */
+  @media screen and (max-width: 749px) {
+    media-gallery,
+    .thumbnail-gallery,
+    .media-gallery--extend,
+    slideshow-component {
+      padding-inline: 14px !important;
+      margin-inline: 0 !important;
+      box-sizing: border-box !important;
+      width: 100% !important;
+    }
+
+    .thumbnail-gallery__thumbnail {
+      width: 56px;
+      height: 56px;
+    }
+
+    .thumbnail-gallery__thumbnails {
+      gap: 6px;
+      padding-inline: 2px;
+    }
+  }
+
+  zoom-dialog dialog {
+    width: 100vw;
+    height: 100vh;
+    border: none;
+    margin: 0;
+    padding: 0;
+    max-width: 100%;
+    max-height: 100%;
+    background: #fff;
+    opacity: 0;
+    transition: opacity var(--animation-speed) var(--animation-easing);
+    scrollbar-width: none;
+
+    &[open] {
+      opacity: 1;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      scroll-behavior: smooth;
+    }
+
+    &::backdrop {
+      background: transparent;
+    }
+  }
+
+  .product-media-container__zoom-button {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: var(--layer-flat);
+    cursor: zoom-in;
+    background-color: transparent;
+
+    &:hover {
+      background-color: transparent;
+    }
+  }
+
+  slideshow-slide.product-media-container--tallest {
+    content-visibility: visible;
+  }
+
+  .product-media__drag-zoom-wrapper {
+    aspect-ratio: inherit;
+    min-height: inherit;
+    min-width: inherit;
+    display: inherit;
+    flex: inherit;
+  }
+
+  .media-gallery__mobile-controls {
+    grid-area: auto;
+  }
+
+  .product-media-container--zoomable.product-media-container--image {
+    cursor: zoom-in;
+  }
+{% endstylesheet %}

@@ -1,0 +1,210 @@
+
+
+<script
+  src="{{ 'blog-posts-list.js' | asset_url }}"
+  type="module"
+  fetchpriority="low"
+></script>
+
+{% liquid
+  if section.settings.background_color != blank
+    render 'contrast-override', background_color: section.settings.background_color, section_id: section.id
+  endif
+%}
+
+<blog-posts-list section-id="{{ section.id }}">
+  <div
+    class="section-background{% if section.settings.background_color != blank %} color-custom-{{ section.id }}{% endif %}"
+  ></div>
+  <div
+    class="
+      section
+      {% if section.settings.background_color != blank %}color-custom-{{ section.id }}{% endif %}
+      blog-posts
+      spacing-style
+      size-style
+    "
+    data-testid="blog-posts"
+    style="{% render 'spacing-style', settings: section.settings %}"
+  >
+    {% content_for 'blocks' %}
+
+    <div
+      ref="grid"
+      class="blog-posts-container"
+    >
+      {% for article in blog.articles %}
+        <div
+          class="blog-post-item"
+          data-testid="blog-post-item"
+        >
+          {% content_for 'block', id: 'static-blog-post-card', type: '_blog-post-card', article: article %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</blog-posts-list>
+
+{% stylesheet %}
+  .blog-posts {
+    --page-content-width: var(--narrow-page-width);
+    --page-width: calc(var(--page-content-width) + (var(--page-margin) * 2));
+    --columns-gap: 32px;
+    --rows-gap: 48px;
+  }
+
+  .blog-posts > .shopify-block {
+    max-width: 1100px;
+    margin-inline: auto;
+    padding-inline: var(--page-margin);
+    width: 100%;
+  }
+
+  .blog-posts-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--rows-gap);
+    width: 100%;
+    max-width: 1100px;
+    margin-inline: auto;
+    padding-inline: var(--page-margin);
+  }
+
+  @media screen and (min-width: 750px) {
+    .blog-posts-container {
+      grid-template-columns: repeat(3, 1fr);
+      column-gap: var(--columns-gap);
+    }
+  }
+
+  .blog-post-item {
+    border: none;
+    padding: 0;
+    background: transparent;
+  }
+
+  .blog-posts .blog-post-card {
+    --text-align: center;
+    gap: 0;
+    transform-origin: center center;
+  }
+
+  .blog-posts .blog-post-details,
+  .blog-posts .blog-post-card__content-text {
+    display: none;
+  }
+
+  .blog-posts .blog-post-card__image-container {
+    overflow: hidden;
+  }
+
+  .blog-posts .blog-post-card__image {
+    --blog-post-card-img-height: auto;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    display: block;
+    transition: transform 0.4s ease;
+  }
+
+  .blog-posts .blog-post-card__content {
+    padding-block-start: 1rem;
+  }
+
+  .blog-posts .blog-post-card__title-link {
+    padding-block-start: 0;
+  }
+
+  .blog-posts .blog-post-card__title-link:hover {
+    color: var(--color-foreground);
+  }
+
+  @keyframes blog-card-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+
+    50% {
+      transform: scale(1.03);
+    }
+  }
+
+  @media (hover: hover) {
+    .blog-posts .blog-post-item:hover .blog-post-card {
+      animation: blog-card-pulse 0.6s ease;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:names.blog_posts",
+  "blocks": [
+    {
+      "type": "@theme"
+    },
+    {
+      "type": "@app"
+    },
+    {
+      "type": "text"
+    },
+    {
+      "type": "icon"
+    },
+    {
+      "type": "image"
+    },
+    {
+      "type": "button"
+    },
+    {
+      "type": "video"
+    },
+    {
+      "type": "group"
+    },
+    {
+      "type": "spacer"
+    },
+    {
+      "type": "_divider"
+    }
+  ],
+  "disabled_on": {
+    "groups": ["header"]
+  },
+  "settings": [
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "t:settings.background_color",
+      "placeholder": "t:settings.default"
+    },
+    {
+      "type": "header",
+      "content": "t:content.padding"
+    },
+    {
+      "type": "range",
+      "id": "padding-block-start",
+      "label": "t:settings.top",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-block-end",
+      "label": "t:settings.bottom",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    }
+  ]
+}
+{% endschema %}

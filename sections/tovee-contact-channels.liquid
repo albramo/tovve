@@ -1,0 +1,447 @@
+{% comment %}
+  Section: Tovee Contact Channels
+  Displays social/chat channels above the contact form.
+  Each channel is a configurable block (type, URL, label, description).
+{% endcomment %}
+
+{%- liquid
+  assign bg     = section.settings.background_color
+  assign text   = section.settings.text_color
+  assign accent = section.settings.accent_color
+-%}
+
+<div
+  class="tcc"
+  id="section-{{ section.id }}"
+  style="
+    --tcc-bg: {{ bg }};
+    --tcc-text: {{ text }};
+    --tcc-accent: {{ accent }};
+    padding-block: {{ section.settings.padding_top }}px {{ section.settings.padding_bottom }}px;
+  "
+>
+  <div class="tcc__inner page-width">
+
+    {%- if section.settings.eyebrow != blank -%}
+      <span class="tcc__eyebrow">{{ section.settings.eyebrow }}</span>
+    {%- endif -%}
+
+    {%- if section.settings.title != blank -%}
+      <h2 class="tcc__title">{{ section.settings.title }}</h2>
+    {%- endif -%}
+
+    {%- if section.settings.subtitle != blank -%}
+      <p class="tcc__subtitle">{{ section.settings.subtitle }}</p>
+    {%- endif -%}
+
+    {%- if section.blocks.size > 0 -%}
+      <div class="tcc__grid">
+        {%- for block in section.blocks -%}
+          {%- liquid
+            assign ch   = block.settings.channel
+            assign url  = block.settings.url
+            assign desc = block.settings.description
+            assign cta  = block.settings.cta_label
+
+            case ch
+              when 'facebook'
+                assign ch_name  = 'Facebook'
+                assign ch_color = '#1877F2'
+                assign ch_light = '#E8F0FE'
+              when 'instagram'
+                assign ch_name  = 'Instagram'
+                assign ch_color = '#E1306C'
+                assign ch_light = '#FDE8EF'
+              when 'tiktok'
+                assign ch_name  = 'TikTok'
+                assign ch_color = '#010101'
+                assign ch_light = '#F0F0F0'
+              when 'whatsapp'
+                assign ch_name  = 'WhatsApp'
+                assign ch_color = '#25D366'
+                assign ch_light = '#E6F9EE'
+            endcase
+
+            if block.settings.label != blank
+              assign ch_name = block.settings.label
+            endif
+          -%}
+
+          <a
+            class="tcc__card"
+            href="{{ url }}"
+            target="_blank"
+            rel="noopener noreferrer"
+            style="--card-color: {{ ch_color }}; --card-light: {{ ch_light }};"
+            {{ block.shopify_attributes }}
+          >
+            <div class="tcc__icon-wrap">
+              {%- case ch -%}
+                {%- when 'facebook' -%}
+                  <svg class="tcc__icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.313 0 2.686.236 2.686.236v2.97H15.83c-1.49 0-1.955.93-1.955 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z" fill="currentColor"/>
+                  </svg>
+                {%- when 'instagram' -%}
+                  <svg class="tcc__icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" fill="currentColor"/>
+                  </svg>
+                {%- when 'tiktok' -%}
+                  <svg class="tcc__icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.28 6.28 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.78a4.85 4.85 0 01-1.01-.09z" fill="currentColor"/>
+                  </svg>
+                {%- when 'whatsapp' -%}
+                  <svg class="tcc__icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" fill="currentColor"/>
+                  </svg>
+              {%- endcase -%}
+            </div>
+
+            <div class="tcc__card-body">
+              <p class="tcc__card-name">{{ ch_name }}</p>
+              {%- if desc != blank -%}
+                <p class="tcc__card-desc">{{ desc }}</p>
+              {%- endif -%}
+              <span class="tcc__card-cta">
+                {{ cta | default: 'Chat with us' }}
+                <svg class="tcc__arrow" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+            </div>
+
+            <div class="tcc__card-glow"></div>
+          </a>
+
+        {%- endfor -%}
+      </div>
+    {%- endif -%}
+
+  </div>
+</div>
+
+{% stylesheet %}
+  /* ── Section wrapper ─────────────────── */
+  .tcc {
+    background: var(--tcc-bg, #fcfaf8);
+    color: var(--tcc-text, #2e0808);
+  }
+
+  .tcc__inner {
+    max-width: 900px;
+    margin-inline: auto;
+    padding-inline: clamp(20px, 5vw, 60px);
+    text-align: center;
+  }
+
+  /* ── Header ──────────────────────────── */
+  .tcc__eyebrow {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--tcc-accent, #c49292);
+    margin-bottom: 14px;
+  }
+
+  .tcc__title {
+    font-family: var(--font-heading--family);
+    font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+    font-weight: 300;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+    margin: 0 0 12px;
+    color: var(--tcc-text, #2e0808);
+  }
+
+  .tcc__subtitle {
+    font-size: 0.92rem;
+    line-height: 1.7;
+    opacity: 0.68;
+    margin: 0 auto 44px;
+    max-width: 500px;
+  }
+
+  /* ── Grid ────────────────────────────── */
+  .tcc__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  /* ── Card ────────────────────────────── */
+  .tcc__card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 32px 18px 26px;
+    background: #ffffff;
+    border: 1px solid rgba(46, 8, 8, 0.07);
+    border-radius: 20px;
+    text-decoration: none;
+    color: var(--tcc-text, #2e0808);
+    overflow: hidden;
+    transition:
+      transform 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+      border-color 0.3s ease;
+  }
+
+  .tcc__card:hover {
+    transform: translateY(-7px);
+    box-shadow: 0 22px 52px rgba(0, 0, 0, 0.09);
+    border-color: var(--card-color);
+  }
+
+  /* Soft bottom glow on hover */
+  .tcc__card-glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 120%, var(--card-light) 0%, transparent 65%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  .tcc__card:hover .tcc__card-glow {
+    opacity: 1;
+  }
+
+  /* ── Icon ────────────────────────────── */
+  .tcc__icon-wrap {
+    width: 58px;
+    height: 58px;
+    border-radius: 16px;
+    background: var(--card-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    z-index: 1;
+  }
+
+  .tcc__card:hover .tcc__icon-wrap {
+    transform: scale(1.12) rotate(-5deg);
+  }
+
+  .tcc__icon {
+    width: 26px;
+    height: 26px;
+    color: var(--card-color);
+    display: block;
+  }
+
+  /* ── Card body text ──────────────────── */
+  .tcc__card-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tcc__card-name {
+    font-family: var(--font-heading--family);
+    font-size: 1.05rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    margin: 0;
+    line-height: 1.3;
+  }
+
+  .tcc__card-desc {
+    font-size: 0.78rem;
+    line-height: 1.55;
+    opacity: 0.6;
+    margin: 0;
+    max-width: 160px;
+  }
+
+  /* ── CTA row ─────────────────────────── */
+  .tcc__card-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--card-color);
+    margin-top: 4px;
+    transition: gap 0.25s ease;
+  }
+
+  .tcc__card:hover .tcc__card-cta {
+    gap: 9px;
+  }
+
+  .tcc__arrow {
+    flex-shrink: 0;
+    transition: transform 0.25s ease;
+  }
+
+  .tcc__card:hover .tcc__arrow {
+    transform: translateX(3px);
+  }
+
+  /* ── Responsive ──────────────────────── */
+  @media screen and (max-width: 899px) {
+    .tcc__grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .tcc__subtitle {
+      margin-bottom: 28px;
+    }
+  }
+
+  @media screen and (max-width: 479px) {
+    .tcc__card {
+      padding: 22px 14px 20px;
+    }
+
+    .tcc__icon-wrap {
+      width: 48px;
+      height: 48px;
+    }
+
+    .tcc__card-desc {
+      display: none;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Contact Channels",
+  "tag": "section",
+  "class": "tovee-contact-channels",
+  "max_blocks": 6,
+  "settings": [
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background color",
+      "default": "#FCFAF8"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text color",
+      "default": "#2E0808"
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "Eyebrow accent color",
+      "default": "#C49292"
+    },
+    {
+      "type": "header",
+      "content": "Heading"
+    },
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Eyebrow label",
+      "default": "Support"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Title",
+      "default": "How Can We Help You?"
+    },
+    {
+      "type": "textarea",
+      "id": "subtitle",
+      "label": "Subtitle",
+      "default": "We're just a message away. Reach out on your favourite platform and we'll get back to you shortly."
+    },
+    {
+      "type": "header",
+      "content": "Spacing"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Top padding",
+      "min": 20,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 64
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Bottom padding",
+      "min": 20,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 24
+    }
+  ],
+  "blocks": [
+    {
+      "type": "channel",
+      "name": "Social Channel",
+      "settings": [
+        {
+          "type": "select",
+          "id": "channel",
+          "label": "Platform",
+          "options": [
+            { "value": "facebook",  "label": "Facebook"  },
+            { "value": "instagram", "label": "Instagram" },
+            { "value": "tiktok",    "label": "TikTok"    },
+            { "value": "whatsapp",  "label": "WhatsApp"  }
+          ],
+          "default": "whatsapp"
+        },
+        {
+          "type": "url",
+          "id": "url",
+          "label": "Link URL"
+        },
+        {
+          "type": "text",
+          "id": "label",
+          "label": "Custom name (optional)",
+          "info": "Leave blank to use the platform name"
+        },
+        {
+          "type": "text",
+          "id": "description",
+          "label": "Short description",
+          "default": "We reply within minutes"
+        },
+        {
+          "type": "text",
+          "id": "cta_label",
+          "label": "CTA button text",
+          "default": "Chat with us"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Contact Channels",
+      "blocks": [
+        { "type": "channel", "settings": { "channel": "whatsapp",  "description": "Fastest response — we reply instantly", "cta_label": "Message us" } },
+        { "type": "channel", "settings": { "channel": "instagram", "description": "DMs open daily 9 am \u2013 9 pm" } },
+        { "type": "channel", "settings": { "channel": "facebook",  "description": "Message our page anytime" } },
+        { "type": "channel", "settings": { "channel": "tiktok",    "description": "Follow our skincare journey" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

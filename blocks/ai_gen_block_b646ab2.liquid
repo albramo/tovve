@@ -1,0 +1,452 @@
+{% doc %}
+  @prompt
+    Create a product information block that displays as horizontal tabs on desktop (with tab buttons: Description, Ingredients, How to Use, Features, Reviews — shown in a row at the top, with the active tab content displayed below), and switches to a collapsible accordion style on mobile. The tab/accordion content should be editable via theme settings. Match a clean, minimal luxury skincare aesthetic with subtle borders and smooth transitions.
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-product-tabs-{{ ai_gen_id }} {
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    display: block;
+    background-color: {{ block.settings.background_color }};
+    padding: {{ block.settings.padding }}px;
+    border-radius: {{ block.settings.border_radius }}px;
+  }
+
+  .ai-product-tabs__nav-{{ ai_gen_id }} {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid {{ block.settings.border_color }};
+    margin-bottom: 24px;
+  }
+
+  .ai-product-tabs__button-{{ ai_gen_id }} {
+    background: none;
+    border: none;
+    padding: 12px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    color: {{ block.settings.tab_text_color }};
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    font-family: {{ block.settings.tab_font.family }}, {{ block.settings.tab_font.fallback_families }};
+    font-weight: {{ block.settings.tab_font.weight }};
+  }
+
+  .ai-product-tabs__button-{{ ai_gen_id }}:hover {
+    color: {{ block.settings.tab_active_color }};
+  }
+
+  .ai-product-tabs__button-{{ ai_gen_id }}.active {
+    color: {{ block.settings.tab_active_color }};
+    border-bottom-color: {{ block.settings.tab_active_color }};
+  }
+
+  .ai-product-tabs__content-{{ ai_gen_id }} {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    color: {{ block.settings.content_text_color }};
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .ai-product-tabs__content-{{ ai_gen_id }}.active {
+    display: block;
+    opacity: 1;
+  }
+
+  .ai-product-tabs__accordion-{{ ai_gen_id }} {
+    display: none;
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-product-tabs__nav-{{ ai_gen_id }} {
+      display: none;
+    }
+
+    .ai-product-tabs__content-{{ ai_gen_id }} {
+      display: none;
+    }
+
+    .ai-product-tabs__accordion-{{ ai_gen_id }} {
+      display: block;
+    }
+
+    .ai-product-tabs__accordion-item-{{ ai_gen_id }} {
+      border-bottom: 1px solid {{ block.settings.border_color }};
+    }
+
+    .ai-product-tabs__accordion-header-{{ ai_gen_id }} {
+      width: 100%;
+      background: none;
+      border: none;
+      padding: 16px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: {{ block.settings.tab_text_color }};
+      text-align: left;
+      font-family: {{ block.settings.tab_font.family }}, {{ block.settings.tab_font.fallback_families }};
+    }
+
+    .ai-product-tabs__accordion-icon-{{ ai_gen_id }} {
+      width: 20px;
+      height: 20px;
+      transition: transform 0.3s ease;
+      flex-shrink: 0;
+    }
+
+    .ai-product-tabs__accordion-header-{{ ai_gen_id }}.active .ai-product-tabs__accordion-icon-{{ ai_gen_id }} {
+      transform: rotate(180deg);
+    }
+
+    .ai-product-tabs__accordion-content-{{ ai_gen_id }} {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      color: {{ block.settings.content_text_color }};
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .ai-product-tabs__accordion-content-{{ ai_gen_id }}.active {
+      max-height: 1000px;
+      padding-bottom: 16px;
+    }
+  }
+{% endstyle %}
+
+<product-tabs-{{ ai_gen_id }} class="ai-product-tabs-{{ ai_gen_id }}" {{ block.shopify_attributes }}>
+  <div class="ai-product-tabs__nav-{{ ai_gen_id }}">
+    <button class="ai-product-tabs__button-{{ ai_gen_id }} active" data-tab="description">
+      {{ block.settings.tab_1_title }}
+    </button>
+    <button class="ai-product-tabs__button-{{ ai_gen_id }}" data-tab="ingredients">
+      {{ block.settings.tab_2_title }}
+    </button>
+    <button class="ai-product-tabs__button-{{ ai_gen_id }}" data-tab="how-to-use">
+      {{ block.settings.tab_3_title }}
+    </button>
+    <button class="ai-product-tabs__button-{{ ai_gen_id }}" data-tab="features">
+      {{ block.settings.tab_4_title }}
+    </button>
+    <button class="ai-product-tabs__button-{{ ai_gen_id }}" data-tab="reviews">
+      {{ block.settings.tab_5_title }}
+    </button>
+  </div>
+
+  <div class="ai-product-tabs__content-{{ ai_gen_id }} active" data-content="description">
+    {{ block.settings.tab_1_content }}
+  </div>
+  <div class="ai-product-tabs__content-{{ ai_gen_id }}" data-content="ingredients">
+    {{ block.settings.tab_2_content }}
+  </div>
+  <div class="ai-product-tabs__content-{{ ai_gen_id }}" data-content="how-to-use">
+    {{ block.settings.tab_3_content }}
+  </div>
+  <div class="ai-product-tabs__content-{{ ai_gen_id }}" data-content="features">
+    {{ block.settings.tab_4_content }}
+  </div>
+  <div class="ai-product-tabs__content-{{ ai_gen_id }}" data-content="reviews">
+    {{ block.settings.tab_5_content }}
+  </div>
+
+  <div class="ai-product-tabs__accordion-{{ ai_gen_id }}">
+    <div class="ai-product-tabs__accordion-item-{{ ai_gen_id }}">
+      <button class="ai-product-tabs__accordion-header-{{ ai_gen_id }} active" data-accordion="description">
+        <span>{{ block.settings.tab_1_title }}</span>
+        <svg class="ai-product-tabs__accordion-icon-{{ ai_gen_id }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+      <div class="ai-product-tabs__accordion-content-{{ ai_gen_id }} active">
+        {{ block.settings.tab_1_content }}
+      </div>
+    </div>
+
+    <div class="ai-product-tabs__accordion-item-{{ ai_gen_id }}">
+      <button class="ai-product-tabs__accordion-header-{{ ai_gen_id }}" data-accordion="ingredients">
+        <span>{{ block.settings.tab_2_title }}</span>
+        <svg class="ai-product-tabs__accordion-icon-{{ ai_gen_id }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+      <div class="ai-product-tabs__accordion-content-{{ ai_gen_id }}">
+        {{ block.settings.tab_2_content }}
+      </div>
+    </div>
+
+    <div class="ai-product-tabs__accordion-item-{{ ai_gen_id }}">
+      <button class="ai-product-tabs__accordion-header-{{ ai_gen_id }}" data-accordion="how-to-use">
+        <span>{{ block.settings.tab_3_title }}</span>
+        <svg class="ai-product-tabs__accordion-icon-{{ ai_gen_id }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+      <div class="ai-product-tabs__accordion-content-{{ ai_gen_id }}">
+        {{ block.settings.tab_3_content }}
+      </div>
+    </div>
+
+    <div class="ai-product-tabs__accordion-item-{{ ai_gen_id }}">
+      <button class="ai-product-tabs__accordion-header-{{ ai_gen_id }}" data-accordion="features">
+        <span>{{ block.settings.tab_4_title }}</span>
+        <svg class="ai-product-tabs__accordion-icon-{{ ai_gen_id }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+      <div class="ai-product-tabs__accordion-content-{{ ai_gen_id }}">
+        {{ block.settings.tab_4_content }}
+      </div>
+    </div>
+
+    <div class="ai-product-tabs__accordion-item-{{ ai_gen_id }}">
+      <button class="ai-product-tabs__accordion-header-{{ ai_gen_id }}" data-accordion="reviews">
+        <span>{{ block.settings.tab_5_title }}</span>
+        <svg class="ai-product-tabs__accordion-icon-{{ ai_gen_id }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+      <div class="ai-product-tabs__accordion-content-{{ ai_gen_id }}">
+        {{ block.settings.tab_5_content }}
+      </div>
+    </div>
+  </div>
+</product-tabs-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class ProductTabs{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+      }
+
+      connectedCallback() {
+        this.tabButtons = this.querySelectorAll('.ai-product-tabs__button-{{ ai_gen_id }}');
+        this.tabContents = this.querySelectorAll('.ai-product-tabs__content-{{ ai_gen_id }}');
+        this.accordionHeaders = this.querySelectorAll('.ai-product-tabs__accordion-header-{{ ai_gen_id }}');
+        this.accordionContents = this.querySelectorAll('.ai-product-tabs__accordion-content-{{ ai_gen_id }}');
+
+        this.setupTabs();
+        this.setupAccordion();
+      }
+
+      setupTabs() {
+        this.tabButtons.forEach((button) => {
+          button.addEventListener('click', () => {
+            const tabName = button.getAttribute('data-tab');
+
+            this.tabButtons.forEach((btn) => btn.classList.remove('active'));
+            this.tabContents.forEach((content) => content.classList.remove('active'));
+
+            button.classList.add('active');
+            const activeContent = this.querySelector(`[data-content="${tabName}"]`);
+            if (activeContent) {
+              activeContent.classList.add('active');
+            }
+          });
+        });
+      }
+
+      setupAccordion() {
+        this.accordionHeaders.forEach((header) => {
+          header.addEventListener('click', () => {
+            const accordionName = header.getAttribute('data-accordion');
+            const isActive = header.classList.contains('active');
+
+            this.accordionHeaders.forEach((h) => h.classList.remove('active'));
+            this.accordionContents.forEach((c) => c.classList.remove('active'));
+
+            if (!isActive) {
+              header.classList.add('active');
+              const content = header.nextElementSibling;
+              if (content) {
+                content.classList.add('active');
+              }
+            }
+          });
+        });
+      }
+    }
+
+    customElements.define('product-tabs-{{ ai_gen_id }}', ProductTabs{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Product info tabs",
+  "tag": null,
+  "settings": [
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "range",
+      "id": "padding",
+      "label": "Padding",
+      "min": 0,
+      "max": 60,
+      "step": 4,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 20,
+      "step": 2,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "border_color",
+      "label": "Border",
+      "default": "#e0e0e0"
+    },
+    {
+      "type": "color",
+      "id": "tab_text_color",
+      "label": "Tab text",
+      "default": "#4a3a3a"
+    },
+    {
+      "type": "color",
+      "id": "tab_active_color",
+      "label": "Active tab",
+      "default": "#2e0808"
+    },
+    {
+      "type": "color",
+      "id": "content_text_color",
+      "label": "Content text",
+      "default": "#2e0808"
+    },
+    {
+      "type": "header",
+      "content": "Typography"
+    },
+    {
+      "type": "font_picker",
+      "id": "tab_font",
+      "label": "Tab font",
+      "default": "poppins_n4"
+    },
+    {
+      "type": "header",
+      "content": "Description tab"
+    },
+    {
+      "type": "text",
+      "id": "tab_1_title",
+      "label": "Title",
+      "default": "Description"
+    },
+    {
+      "type": "richtext",
+      "id": "tab_1_content",
+      "label": "Content",
+      "default": "<p>Add your product description here. Highlight key features and benefits.</p>"
+    },
+    {
+      "type": "header",
+      "content": "Ingredients tab"
+    },
+    {
+      "type": "text",
+      "id": "tab_2_title",
+      "label": "Title",
+      "default": "Ingredients"
+    },
+    {
+      "type": "richtext",
+      "id": "tab_2_content",
+      "label": "Content",
+      "default": "<p>List your product ingredients here.</p>"
+    },
+    {
+      "type": "header",
+      "content": "How to use tab"
+    },
+    {
+      "type": "text",
+      "id": "tab_3_title",
+      "label": "Title",
+      "default": "How to Use"
+    },
+    {
+      "type": "richtext",
+      "id": "tab_3_content",
+      "label": "Content",
+      "default": "<p>Provide usage instructions here.</p>"
+    },
+    {
+      "type": "header",
+      "content": "Features tab"
+    },
+    {
+      "type": "text",
+      "id": "tab_4_title",
+      "label": "Title",
+      "default": "Features"
+    },
+    {
+      "type": "richtext",
+      "id": "tab_4_content",
+      "label": "Content",
+      "default": "<p>Highlight product features here.</p>"
+    },
+    {
+      "type": "header",
+      "content": "Reviews tab"
+    },
+    {
+      "type": "text",
+      "id": "tab_5_title",
+      "label": "Title",
+      "default": "Reviews"
+    },
+    {
+      "type": "richtext",
+      "id": "tab_5_content",
+      "label": "Content",
+      "default": "<p>Customer reviews will appear here.</p>"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Product info tabs"
+    }
+  ]
+}
+{% endschema %}

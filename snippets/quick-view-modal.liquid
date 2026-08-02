@@ -1,0 +1,544 @@
+{% comment %}
+  Snippet: Quick View Modal
+  Rendered inside product cards and automatically teleported to <body>.
+{% endcomment %}
+
+{% liquid
+  assign variant = product.selected_or_first_available_variant
+  assign desc_metafield = product.metafields.custom.description
+  if desc_metafield != blank
+    assign product_desc = desc_metafield
+  else
+    assign product_desc = product.description
+  endif
+
+  assign modal_id = 'qv-modal-' | append: block.id | append: '-' | append: product.id
+%}
+
+<quick-view-modal
+  id="{{ modal_id }}"
+  class="qv-modal"
+  aria-hidden="true"
+  role="dialog"
+  aria-label="{{ product.title | escape }}"
+>
+  <div class="qv-modal__backdrop" data-qv-close></div>
+
+  <!-- Move Close Button Outside Window (Fixed in Viewport) -->
+  <button type="button" class="qv-modal__close-btn" data-qv-close aria-label="Close dialog">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+  </button>
+
+  <div class="qv-modal__window">
+    <div class="qv-modal__body">
+      <!-- Media Gallery -->
+      <div class="qv-gallery">
+        <div class="qv-gallery__main">
+          {% assign featured_media = product.featured_media.preview_image | default: product.featured_image %}
+          <img
+            id="{{ modal_id }}-main-img"
+            src="{{ featured_media | image_url: width: 800 }}"
+            alt="{{ product.title | escape }}"
+            loading="lazy"
+            width="800"
+            height="800"
+            class="qv-gallery__img"
+          >
+          {% if product.compare_at_price > product.price %}
+            {% assign qv_discount = product.compare_at_price | minus: product.price | times: 100 | divided_by: product.compare_at_price %}
+            <span class="qv-gallery__badge">-{{ qv_discount }}%</span>
+          {% endif %}
+        </div>
+
+        {% if product.media.size > 1 %}
+          <div class="qv-gallery__thumbs">
+            {% for media in product.media limit: 8 %}
+              {% assign thumb_src = media.preview_image | default: media | image_url: width: 800 %}
+              <button
+                type="button"
+                class="qv-gallery__thumb-btn{% if forloop.first %} is-active{% endif %}"
+                data-img-src="{{ thumb_src }}"
+                aria-label="View media {{ forloop.index }}"
+              >
+                <img
+                  src="{{ media.preview_image | default: media | image_url: width: 140 }}"
+                  alt="{{ product.title | escape }}"
+                  loading="lazy"
+                  width="140"
+                  height="140"
+                >
+              </button>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Details & Actions -->
+      <div class="qv-details">
+        <h2 class="qv-details__title">{{ product.title }}</h2>
+
+        <div class="qv-details__price">
+          <span class="qv-details__current-price{% if product.compare_at_price > product.price %} qv-details__current-price--sale{% endif %}">
+            {{ product.price | money }}
+          </span>
+          {% if product.compare_at_price > product.price %}
+            <span class="qv-details__compare-price">{{ product.compare_at_price | money }}</span>
+          {% endif %}
+        </div>
+
+        <!-- Description Metafield ONLY -->
+        {% if product_desc != blank %}
+          <div class="qv-details__description rte">
+            {{ product_desc }}
+          </div>
+        {% endif %}
+
+        <!-- Quantity & Add to Cart Form -->
+        <div class="qv-details__form-wrapper">
+          <form method="post" action="/cart/add" class="qv-details__form" data-qv-form onsubmit="event.preventDefault(); return false;">
+            <input type="hidden" name="id" value="{{ variant.id }}">
+
+            <div class="qv-details__actions-row">
+              <!-- Native Quantity Stepper -->
+              <div class="qv-qty">
+                <button type="button" class="qv-qty__btn" data-qty-change="-1" aria-label="Decrease quantity">-</button>
+                <input
+                  type="number"
+                  name="quantity"
+                  value="1"
+                  min="1"
+                  max="99"
+                  class="qv-qty__input"
+                  aria-label="Quantity"
+                >
+                <button type="button" class="qv-qty__btn" data-qty-change="1" aria-label="Increase quantity">+</button>
+              </div>
+
+              <!-- Add to Cart Button -->
+              <button
+                type="button"
+                class="qv-add-btn"
+                data-qv-add-btn
+                {% unless variant.available %}disabled{% endunless %}
+              >
+                <span class="qv-add-btn__text">
+                  {% if variant.available %}
+                    Add to cart
+                  {% else %}
+                    Out of stock
+                  {% endif %}
+                </span>
+                <span class="qv-add-btn__spinner" aria-hidden="true"></span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Need Help Link -->
+        <div class="qv-help">
+          <a href="/pages/contact" class="qv-help__link">
+            Need help?
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</quick-view-modal>
+
+{% style %}
+  /* ── Quick View Modal Styles ────────────────────────── */
+  quick-view-modal.qv-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    padding: 16px;
+    box-sizing: border-box;
+    font-family: inherit;
+  }
+
+  quick-view-modal.qv-modal.is-open {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .qv-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(20, 5, 8, 0.65);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .qv-modal__window {
+    position: relative;
+    z-index: 2;
+    background: var(--color-brand-warm-white, #ffffff);
+    color: var(--color-brand-dark, #2e0808);
+    border-radius: 24px;
+    width: 100%;
+    max-width: 860px;
+    max-height: 88vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(46, 8, 8, 0.08);
+    transform: scale(0.94) translateY(12px);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    scrollbar-width: thin;
+  }
+
+  quick-view-modal.qv-modal.is-open .qv-modal__window {
+    transform: scale(1) translateY(0);
+  }
+
+  /* Fixed Absolute Close Button (Top Left, Outside Window) */
+  .qv-modal__close-btn {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    z-index: 100000;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1px solid rgba(46, 8, 8, 0.15);
+    color: var(--color-brand-dark, #2e0808);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: background 0.2s ease, transform 0.2s ease, color 0.2s ease;
+  }
+
+  .qv-modal__close-btn:hover {
+    background: var(--color-brand-burgundy, #800020);
+    color: #ffffff;
+    transform: rotate(90deg);
+  }
+
+  .qv-modal__body {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 28px;
+    padding: 32px;
+    box-sizing: border-box;
+    text-align: left;
+  }
+
+  /* Gallery */
+  .qv-gallery {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .qv-gallery__main {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #f8f6f4;
+  }
+
+  .qv-gallery__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: opacity 0.25s ease;
+  }
+
+  .qv-gallery__badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: #d9534f;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 400;
+    padding: 4px 10px;
+    border-radius: 6px;
+    box-shadow: 0 3px 10px rgba(217, 83, 79, 0.3);
+  }
+
+  .qv-gallery__thumbs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .qv-gallery__thumb-btn {
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid transparent;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+    opacity: 0.65;
+    transition: all 0.2s ease;
+  }
+
+  .qv-gallery__thumb-btn.is-active,
+  .qv-gallery__thumb-btn:hover {
+    opacity: 1;
+    border-color: var(--color-brand-burgundy, #800020);
+  }
+
+  .qv-gallery__thumb-btn img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Details */
+  .qv-details {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    text-align: left;
+  }
+
+  .qv-details__title {
+    font-family: var(--font-heading--family, inherit);
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.3;
+    color: var(--color-brand-dark, #2e0808);
+  }
+
+  .qv-details__price {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .qv-details__current-price {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--color-brand-dark, #2e0808);
+  }
+
+  .qv-details__current-price--sale {
+    color: #e53935;
+  }
+
+  .qv-details__compare-price {
+    font-size: 0.9rem;
+    color: #888;
+    text-decoration: line-through;
+  }
+
+  .qv-details__description {
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: #555;
+    max-height: none !important;
+    overflow-y: visible !important;
+  }
+
+  /* Native Site Quantity Stepper & Buy Button */
+  .qv-details__actions-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .qv-qty {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2px;
+    width: auto;
+    min-width: 110px;
+    height: 42px;
+    padding: 4px;
+    background: rgb(var(--color-brand-dark-rgb, 46 8 8) / 0.035);
+    border: 1px solid rgb(var(--color-brand-dark-rgb, 46 8 8) / 0.1);
+    border-radius: 999px;
+    box-sizing: border-box;
+    color: var(--color-brand-dark, #2e0808);
+  }
+
+  .qv-qty__btn {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--color-brand-warm-white, #ffffff);
+    border: 1px solid rgb(var(--color-brand-dark-rgb, 46 8 8) / 0.1);
+    box-shadow: 0 1px 4px rgb(var(--color-brand-dark-rgb, 46 8 8) / 0.08);
+    color: var(--color-brand-dark, #2e0808);
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  }
+
+  .qv-qty__btn:hover:not(:disabled) {
+    background: var(--color-brand-burgundy, #800020);
+    border-color: var(--color-brand-burgundy, #800020);
+    color: #ffffff;
+    transform: scale(1.06);
+  }
+
+  .qv-qty__input {
+    width: 34px;
+    min-width: 28px;
+    max-width: 38px;
+    padding: 0;
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    color: var(--color-brand-dark, #2e0808);
+    background: transparent;
+    border: none;
+    -moz-appearance: textfield;
+  }
+
+  .qv-qty__input::-webkit-outer-spin-button,
+  .qv-qty__input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .qv-add-btn {
+    flex: 1;
+    height: 42px;
+    border-radius: 30px;
+    background: var(--color-brand-dark, #2e0808);
+    color: #ffffff;
+    border: none;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.25s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 8px rgba(46, 8, 8, 0.12);
+    padding: 0 20px;
+    white-space: nowrap;
+  }
+
+  .qv-add-btn:hover:not(:disabled) {
+    background: var(--color-brand-burgundy, #800020);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(128, 0, 32, 0.25);
+  }
+
+  .qv-add-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .qv-add-btn.is-loading .qv-add-btn__text {
+    display: none;
+  }
+
+  .qv-add-btn.is-loading .qv-add-btn__spinner {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: qvSpin 0.7s linear infinite;
+  }
+
+  @keyframes qvSpin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Centered Need Help? Link */
+  .qv-help {
+    text-align: center;
+    margin-top: 6px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .qv-help__link {
+    display: inline-block;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--color-brand-burgundy, #800020);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    transition: opacity 0.2s ease;
+  }
+
+  .qv-help__link:hover {
+    opacity: 0.75;
+  }
+
+  /* Responsive Mobile Layout */
+  @media screen and (max-width: 749px) {
+    .qv-modal__close-btn {
+      top: 16px !important;
+      left: 16px !important;
+      width: 36px !important;
+      height: 36px !important;
+    }
+
+    .qv-modal__body {
+      grid-template-columns: 1fr;
+      padding: 24px 16px 20px;
+      gap: 18px;
+    }
+
+    .qv-details__title {
+      font-size: 1.15rem;
+    }
+
+    .qv-details__actions-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .qv-qty {
+      min-width: 96px;
+      height: 38px;
+      padding: 2px;
+    }
+
+    .qv-qty__btn {
+      width: 30px;
+      height: 30px;
+      min-width: 30px;
+      min-height: 30px;
+    }
+
+    .qv-add-btn {
+      flex: 1;
+      height: 38px;
+      font-size: 0.82rem;
+      padding: 0 10px;
+    }
+  }
+{% endstyle %}

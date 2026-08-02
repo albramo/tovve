@@ -1,0 +1,30 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */{
+  "sections": {
+    "main": {
+      "type": "tovee-page",
+      "settings": {
+        "show_banner": true,
+        "eyebrow": "Tovee",
+        "title": "Shipping & Returns",
+        "subtitle": "Simple, transparent policies for a seamless shopping experience.",
+        "content": "<h2>Shipping</h2><p>We offer <strong>free shipping on all orders</strong>. Orders are typically processed within 1–2 business days. Delivery times vary by location but generally arrive within 5–10 business days.</p><h2>Order Tracking</h2><p>Once your order ships, you will receive a confirmation email with tracking information so you can follow your package every step of the way.</p><h2>Returns</h2><p>We want you to love your Tovee products. If you are not completely satisfied, you may return unopened items within 14 days of delivery for a full refund.</p><h2>Exchanges</h2><p>Need a different product? Contact our team at the <a href=\"/pages/contact\">Contact page</a> and we will help you with an exchange.</p><h2>Damaged Items</h2><p>If your order arrives damaged, please contact us within 48 hours with photos and we will resolve it promptly.</p>",
+        "button_label": "",
+        "button_link": "",
+        "background_color": "#FCFAF8",
+        "padding-block-start": 0,
+        "padding-block-end": 0
+      }
+    }
+  },
+  "order": [
+    "main"
+  ]
+}

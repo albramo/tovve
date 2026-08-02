@@ -1,0 +1,565 @@
+{%- liquid
+  assign block_settings = block.settings
+  assign product_resource = closest.product | default: product
+  assign current_variant = product_resource.selected_or_first_available_variant
+
+  # Fetch the dynamic percentage discount from product metafield or block settings fallback as requested by user
+  assign discount_percent = nil
+  if product_resource.metafields.custom.pack_discount.value != blank
+    assign discount_percent = product_resource.metafields.custom.pack_discount.value
+  elsif product_resource.metafields.custom.pack_discount != blank
+    assign discount_percent = product_resource.metafields.custom.pack_discount
+  endif
+
+  if discount_percent == blank
+    assign discount_percent = block.settings.fallback_discount | default: block.settings.default_discount_percent | default: 10
+  endif
+  assign discount_percent = discount_percent | plus: 0
+
+  # Fetch the dynamic quantity for Pack 2 from product metafield or block settings fallback as requested by user
+  assign pack_2_quantity = nil
+  if product_resource.metafields.custom.pack_quantity.value != blank
+    assign pack_2_quantity = product_resource.metafields.custom.pack_quantity.value
+  elsif product_resource.metafields.custom.pack_quantity != blank
+    assign pack_2_quantity = product_resource.metafields.custom.pack_quantity
+  endif
+
+  if pack_2_quantity == blank
+    assign pack_2_quantity = block.settings.fallback_pack_quantity | default: 2
+  endif
+  assign pack_2_quantity = pack_2_quantity | plus: 0
+
+  # Localize and dynamically generate Pack 2 title if default is used
+  assign dynamic_pack_2_title = block_settings.pack_2_title
+  if dynamic_pack_2_title == "Pack of 2" or dynamic_pack_2_title == blank
+    if request.locale.iso_code == 'ar'
+      assign dynamic_pack_2_title = 'عرض ' | append: pack_2_quantity | append: ' حبة'
+    else
+      assign dynamic_pack_2_title = 'Pack of ' | append: pack_2_quantity
+    endif
+  endif
+
+  # Calculations for Pack 1
+  assign pack_1_price = current_variant.price
+  assign pack_1_compare_price = current_variant.compare_at_price
+
+  # Calculations for Pack 2
+  assign pack_2_original_price = current_variant.price | times: pack_2_quantity
+  assign discount_multiplier = 100 | minus: discount_percent
+  assign pack_2_discounted_price = pack_2_original_price | times: discount_multiplier | divided_by: 100
+  assign pack_2_save_amount = pack_2_original_price | minus: pack_2_discounted_price
+
+  # Determine if currency code should be enabled
+  assign use_currency = false
+  if settings.currency_code_enabled_product_pages
+    assign use_currency = true
+  endif
+
+  # Format the prices
+  if use_currency
+    assign p1_price_formatted = pack_1_price | money_with_currency
+    if pack_1_compare_price > pack_1_price
+      assign p1_compare_formatted = pack_1_compare_price | money_with_currency
+    endif
+    assign p2_orig_formatted = pack_2_original_price | money_with_currency
+    assign p2_disc_formatted = pack_2_discounted_price | money_with_currency
+    assign p2_save_formatted = pack_2_save_amount | money_with_currency
+  else
+    assign p1_price_formatted = pack_1_price | money
+    if pack_1_compare_price > pack_1_price
+      assign p1_compare_formatted = pack_1_compare_price | money
+    endif
+    assign p2_orig_formatted = pack_2_original_price | money
+    assign p2_disc_formatted = pack_2_discounted_price | money
+    assign p2_save_formatted = pack_2_save_amount | money
+  endif
+
+  # Feature image for cards
+  assign featured_image = current_variant.featured_image | default: product_resource.featured_image
+-%}
+
+{%- if current_variant != blank -%}
+  <pack-selector-component
+    class="pack-selector-block"
+    data-block-id="{{ block.id }}"
+    data-selected-quantity="1"
+    style="
+      --selected-border-color: {{ block_settings.selected_border_color | default: '#2e0808' }};
+      --selected-bg-color: {{ block_settings.selected_bg_color | default: '#fbf5f2' }};
+      --badge-bg-color: {{ block_settings.badge_bg_color | default: '#d9534f' }};
+      --badge-text-color: {{ block_settings.badge_text_color | default: '#ffffff' }};
+      --card-border-color: {{ block_settings.card_border_color | default: '#e7dddd' }};
+    "
+    {{ block.shopify_attributes }}
+  >
+    {%- if block_settings.title != blank -%}
+      <h3 class="pack-selector-title">{{ block_settings.title }}</h3>
+    {%- endif -%}
+
+    <div class="pack-cards-container">
+      <!-- Pack of 1 Card -->
+      <div
+        class="pack-card active"
+        data-quantity="1"
+        role="button"
+        tabindex="0"
+        aria-label="{{ block_settings.pack_1_title | default: 'Pack of 1' }} - {{ p1_price_formatted }}"
+      >
+        <div class="pack-card-inner">
+          <div class="pack-image-wrapper">
+            {%- if featured_image != blank -%}
+              <img
+                src="{{ featured_image | image_url: width: 120 }}"
+                alt="{{ featured_image.alt | escape }}"
+                class="pack-card-img"
+                loading="lazy"
+              >
+            {%- else -%}
+              {{ 'product-1' | placeholder_svg_tag: 'pack-card-img placeholder-svg' }}
+            {%- endif -%}
+          </div>
+          <div class="pack-card-info">
+            <span class="pack-card-name">{{ block_settings.pack_1_title | default: 'Pack of 1' }}</span>
+            <div class="pack-card-prices">
+              <span class="pack-price-sale">{{ p1_price_formatted }}</span>
+              {%- if p1_compare_formatted != blank -%}
+                <span class="pack-price-compare">{{ p1_compare_formatted }}</span>
+              {%- endif -%}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pack of 2 Card -->
+      <div
+        class="pack-card"
+        data-quantity="{{ pack_2_quantity }}"
+        role="button"
+        tabindex="0"
+        aria-label="{{ dynamic_pack_2_title }} - {{ p2_disc_formatted }}"
+      >
+        <!-- Save Badge -->
+        <div class="pack-save-badge">
+          {% assign save_text = 'products.product.save' | t | default: 'Save' %}
+          {{ save_text }} {{ discount_percent }}%
+        </div>
+        <div class="pack-card-inner">
+          <div class="pack-image-wrapper pack-image-double">
+            {%- if featured_image != blank -%}
+              <img
+                src="{{ featured_image | image_url: width: 120 }}"
+                alt="{{ featured_image.alt | escape }}"
+                class="pack-card-img img-back"
+                loading="lazy"
+              >
+              <img
+                src="{{ featured_image | image_url: width: 120 }}"
+                alt="{{ featured_image.alt | escape }}"
+                class="pack-card-img img-front"
+                loading="lazy"
+              >
+            {%- else -%}
+              {{ 'product-1' | placeholder_svg_tag: 'pack-card-img placeholder-svg' }}
+            {%- endif -%}
+          </div>
+          <div class="pack-card-info">
+            <span class="pack-card-name">{{ dynamic_pack_2_title }}</span>
+            <div class="pack-card-prices">
+              <span class="pack-price-sale">{{ p2_disc_formatted }}</span>
+              <span class="pack-price-compare">{{ p2_orig_formatted }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </pack-selector-component>
+
+  <style>
+    .pack-selector-block {
+      display: block;
+      margin: 1.5rem 0;
+      width: 100%;
+    }
+
+    .pack-selector-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #2e0808;
+      margin-bottom: 12px;
+    }
+
+    .pack-cards-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      width: 100%;
+    }
+
+    .pack-card {
+      position: relative;
+      border: 1px solid var(--card-border-color);
+      border-radius: 16px;
+      background-color: #ffffff;
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+      outline: none;
+    }
+
+    .pack-card:hover {
+      border-color: var(--selected-border-color);
+      transform: translateY(-2px);
+    }
+
+    .pack-card.active {
+      border-color: var(--selected-border-color);
+      background-color: var(--selected-bg-color);
+      box-shadow: 0 4px 12px rgba(46, 8, 8, 0.05);
+    }
+
+    .pack-card-inner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      height: 100%;
+    }
+
+    .pack-image-wrapper {
+      position: relative;
+      width: 50px;
+      height: 50px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #fbf9f8;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .pack-card-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 12px;
+    }
+
+    /* Stacked/Double image effect for Pack 2 */
+    .pack-image-double {
+      overflow: visible;
+      background: transparent;
+    }
+
+    .pack-image-double .img-back {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 38px;
+      height: 38px;
+      z-index: 1;
+      opacity: 0.7;
+      transform: rotate(-10deg);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+    }
+
+    .pack-image-double .img-front {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 38px;
+      height: 38px;
+      z-index: 2;
+      transform: rotate(6deg);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .pack-card-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex-grow: 1;
+      justify-content: center;
+    }
+
+    .pack-card-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #2e0808;
+    }
+
+    .pack-card-prices {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pack-price-sale {
+      font-size: 14px;
+      font-weight: 700;
+      color: #2e0808;
+    }
+
+    .pack-price-compare {
+      font-size: 12px;
+      font-weight: 400;
+      text-decoration: line-through;
+      color: #8c7e7e;
+    }
+
+    /* Save Badge style on the Card top right */
+    .pack-save-badge {
+      position: absolute;
+      top: -10px;
+      right: 12px;
+      background-color: #d9534f !important;
+      color: #ffffff !important;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.05em;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      z-index: 3;
+    }
+
+    @media screen and (max-width: 480px) {
+      .pack-cards-container {
+        gap: 12px;
+      }
+      .pack-card {
+        padding: 8px 10px;
+        border-radius: 12px;
+      }
+      .pack-image-wrapper {
+        width: 40px;
+        height: 40px;
+      }
+      .pack-image-double .img-back,
+      .pack-image-double .img-front {
+        width: 30px;
+        height: 30px;
+      }
+      .pack-card-name {
+        font-size: 12px;
+      }
+      .pack-price-sale {
+        font-size: 12px;
+      }
+      .pack-price-compare {
+        font-size: 10px;
+      }
+      .pack-save-badge {
+        font-size: 9px;
+        padding: 2px 8px;
+        top: -8px;
+        right: 8px;
+      }
+    }
+  </style>
+
+  <script>
+    (function() {
+      class PackSelectorComponent extends HTMLElement {
+        constructor() {
+          super();
+          this.cards = [];
+        }
+
+        connectedCallback() {
+          this.init();
+
+          // Listen to product variant selection changes to dynamically morph cards from updated HTML
+          const closestSection = this.closest('.shopify-section, dialog');
+          if (closestSection) {
+            this._boundHandler = this.handleProductSelect.bind(this);
+            closestSection.addEventListener('shopify:product:select', this._boundHandler);
+          }
+        }
+
+        disconnectedCallback() {
+          const closestSection = this.closest('.shopify-section, dialog');
+          if (closestSection && this._boundHandler) {
+            closestSection.removeEventListener('shopify:product:select', this._boundHandler);
+          }
+        }
+
+        init() {
+          this.cards = this.querySelectorAll('.pack-card');
+          this.cards.forEach(card => {
+            card.addEventListener('click', () => {
+              const qty = card.dataset.quantity;
+              this.selectPack(qty);
+            });
+            card.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const qty = card.dataset.quantity;
+                this.selectPack(qty);
+              }
+            });
+          });
+
+          // Read initial state and apply
+          const initialQty = this.getAttribute('data-selected-quantity') || '1';
+          this.selectPack(initialQty);
+        }
+
+        selectPack(qty) {
+          this.setAttribute('data-selected-quantity', qty);
+
+          this.cards.forEach(card => {
+            if (card.dataset.quantity === qty) {
+              card.classList.add('active');
+              card.setAttribute('aria-selected', 'true');
+            } else {
+              card.classList.remove('active');
+              card.setAttribute('aria-selected', 'false');
+            }
+          });
+
+          // Update main form quantity input
+          const qtyInput = document.querySelector('form[data-type="add-to-cart-form"] input[name="quantity"]') || document.querySelector('input[name="quantity"]');
+          if (qtyInput) {
+            qtyInput.value = qty;
+            qtyInput.dispatchEvent(new Event('change', { bubbles: true }));
+            qtyInput.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+
+          // Sync with standard quantity selector component if present
+          const qtyComponent = qtyInput?.closest('quantity-selector-component');
+          if (qtyComponent && typeof qtyComponent.updateButtonStates === 'function') {
+            qtyComponent.updateButtonStates();
+          }
+        }
+
+        handleProductSelect(event) {
+          event.promise.then(({ detail }) => {
+            if (!detail || !detail.html) return;
+            const newPackSelector = detail.html.querySelector(`pack-selector-component[data-block-id="${this.dataset.blockId}"]`);
+            if (newPackSelector) {
+              const currentSelectedQty = this.getAttribute('data-selected-quantity') || '1';
+
+              // Replace cards HTML with new prices and variant images from the section rendering
+              const cardsContainer = this.querySelector('.pack-cards-container');
+              const newCardsContainer = newPackSelector.querySelector('.pack-cards-container');
+              if (cardsContainer && newCardsContainer) {
+                cardsContainer.innerHTML = newCardsContainer.innerHTML;
+              }
+
+              // Re-initialize event listeners on new cards and restore selected pack quantity state
+              this.init();
+              this.selectPack(currentSelectedQty);
+            }
+          }).catch(err => {
+            console.warn('[pack-selector] Failed to update variant info:', err);
+          });
+        }
+      }
+
+      if (!customElements.get('pack-selector-component')) {
+        customElements.define('pack-selector-component', PackSelectorComponent);
+      }
+    })();
+  </script>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Pack Selector",
+  "tag": null,
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Section Title",
+      "default": "SELECT PACK"
+    },
+    {
+      "type": "text",
+      "id": "pack_1_title",
+      "label": "Pack of 1 Label",
+      "default": "Pack of 1"
+    },
+    {
+      "type": "text",
+      "id": "pack_2_title",
+      "label": "Pack of 2 Label",
+      "default": "Pack of 2"
+    },
+    {
+      "type": "range",
+      "id": "fallback_pack_quantity",
+      "label": "Fallback Pack Quantity",
+      "min": 1,
+      "max": 10,
+      "step": 1,
+      "default": 2,
+      "info": "Used if the product's metafield 'custom.pack_quantity' is not configured."
+    },
+    {
+      "type": "range",
+      "id": "fallback_discount",
+      "label": "Fallback Discount Percentage (%)",
+      "min": 1,
+      "max": 99,
+      "step": 1,
+      "default": 10,
+      "info": "Used if the product's metafield 'custom.pack_discount' is not configured."
+    },
+    {
+      "type": "range",
+      "id": "default_discount_percent",
+      "label": "Default Fallback Discount Percentage (%)",
+      "min": 1,
+      "max": 99,
+      "step": 1,
+      "default": 10,
+      "info": "Used if fallback_discount is empty."
+    },
+    {
+      "type": "header",
+      "content": "Appearance & Colors"
+    },
+    {
+      "type": "color",
+      "id": "card_border_color",
+      "label": "Card Border Color",
+      "default": "#e7dddd"
+    },
+    {
+      "type": "color",
+      "id": "selected_border_color",
+      "label": "Selected Border Color",
+      "default": "#2e0808"
+    },
+    {
+      "type": "color",
+      "id": "selected_bg_color",
+      "label": "Selected Background Color",
+      "default": "#fbf5f2"
+    },
+    {
+      "type": "color",
+      "id": "badge_bg_color",
+      "label": "Save Badge Background Color",
+      "default": "#d9534f"
+    },
+    {
+      "type": "color",
+      "id": "badge_text_color",
+      "label": "Save Badge Text Color",
+      "default": "#ffffff"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Pack Selector",
+      "category": "Product"
+    }
+  ]
+}
+{% endschema %}

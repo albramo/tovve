@@ -1,0 +1,689 @@
+<div class="tovee-ceramides-section tovee-reveal-on-scroll" style="background-color: {{ section.settings.background_color }}; color: {{ section.settings.text_color }}; --tovee-accent: {{ section.settings.accent_color }}; padding-block: {{ section.settings.padding_top }}px {{ section.settings.padding_bottom }}px;">
+  <div class="tovee-ceramides__inner page-width">
+    
+    <div class="tovee-ceramides__header">
+      {% if section.settings.subtitle != blank %}
+        <span class="tovee-ceramides__subtitle">{{ section.settings.subtitle }}</span>
+      {% endif %}
+      {% if section.settings.title != blank %}
+        <h2 class="tovee-ceramides__title" style="color: {{ section.settings.heading_color | default: section.settings.text_color }};">{{ section.settings.title }}</h2>
+      {% endif %}
+      {% if section.settings.description != blank %}
+        <p class="tovee-ceramides__desc">{{ section.settings.description }}</p>
+      {% endif %}
+    </div>
+
+    <div class="tovee-ceramides__cards-wrap" data-ceramides-carousel>
+      <div class="tovee-ceramides__carousel-viewport">
+        <div class="tovee-ceramides__grid">
+          {% for block in section.blocks %}
+            <div class="tovee-ceramides__card{% if forloop.first %} is-active{% endif %}{% if forloop.index == 2 %} is-next{% endif %}" data-slide-index="{{ forloop.index0 }}" {{ block.shopify_attributes }}>
+              <div class="tovee-ceramides__card-icon-wrapper">
+                {% case block.settings.icon %}
+                  {% when 'shield' %}
+                    <svg class="tovee-ceramides__card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  {% when 'droplet' %}
+                    <svg class="tovee-ceramides__card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-4.3-7-11-7-11S5 10.7 5 15a7 7 0 0 0 7 7z"/></svg>
+                  {% when 'sparkle' %}
+                    <svg class="tovee-ceramides__card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9Z"/></svg>
+                  {% when 'leaf' %}
+                    <svg class="tovee-ceramides__card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 22C2 12 10 4 20 4v6c0 10-8 12-18 12z"/><path d="M20 4L2 22"/></svg>
+                {% endcase %}
+              </div>
+
+              {% if block.settings.title != blank %}
+                <h3 class="tovee-ceramides__card-title" style="color: {{ section.settings.heading_color | default: section.settings.text_color }};">{{ block.settings.title }}</h3>
+              {% endif %}
+              {% if block.settings.text != blank %}
+                <p class="tovee-ceramides__card-text">{{ block.settings.text }}</p>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      {% if section.blocks.size > 1 %}
+        <div class="tovee-ceramides__dots" role="tablist" aria-label="Ceramide benefits">
+          {% for block in section.blocks %}
+            <button
+              type="button"
+              class="tovee-ceramides__dot{% if forloop.first %} is-active{% endif %}"
+              role="tab"
+              aria-label="{{ block.settings.title | default: 'Slide' }} {{ forloop.index }}"
+              aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
+              data-slide-to="{{ forloop.index0 }}"
+            ></button>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<script>
+  class ToveeCeramidesCarousel {
+    constructor(root) {
+      this.root = root;
+      this.viewport = root.querySelector('.tovee-ceramides__carousel-viewport');
+      this.cards = [...root.querySelectorAll('.tovee-ceramides__card')];
+      this.dots = [...root.querySelectorAll('.tovee-ceramides__dot')];
+      this.current = 0;
+      this.dragStartX = 0;
+      this.dragDeltaX = 0;
+      this.isDragging = false;
+      this.mobileQuery = window.matchMedia('(max-width: 749px)');
+
+      if (this.cards.length < 2) return;
+
+      this.#updateStack();
+      this.#bindEvents();
+      this.#syncViewportHeight();
+
+      this.mobileQuery.addEventListener('change', () => {
+        this.#resetDragStyles();
+        this.#updateStack();
+        this.#syncViewportHeight();
+      });
+
+      window.addEventListener('resize', () => this.#syncViewportHeight());
+    }
+
+    #isMobile() {
+      return this.mobileQuery.matches;
+    }
+
+    #updateStack() {
+      const total = this.cards.length;
+
+      this.cards.forEach((card, index) => {
+        card.classList.remove('is-active', 'is-next', 'is-prev', 'is-hidden');
+
+        if (!this.#isMobile()) return;
+
+        if (index === this.current) {
+          card.classList.add('is-active');
+        } else if (index === (this.current + 1) % total) {
+          card.classList.add('is-next');
+        } else if (index === (this.current - 1 + total) % total) {
+          card.classList.add('is-prev');
+        } else {
+          card.classList.add('is-hidden');
+        }
+      });
+
+      this.dots.forEach((dot, index) => {
+        const isActive = index === this.current;
+        dot.classList.toggle('is-active', isActive);
+        dot.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+    }
+
+    #goTo(index) {
+      this.current = (index + this.cards.length) % this.cards.length;
+      this.#updateStack();
+      this.#syncViewportHeight();
+    }
+
+    #next() {
+      this.#goTo(this.current + 1);
+    }
+
+    #prev() {
+      this.#goTo(this.current - 1);
+    }
+
+    #syncViewportHeight() {
+      if (!this.#isMobile() || !this.viewport) {
+        if (this.viewport) this.viewport.style.removeProperty('min-height');
+        this.cards.forEach((card) => card.style.removeProperty('min-height'));
+        return;
+      }
+
+      const activeCard = this.cards[this.current];
+      if (!activeCard) return;
+
+      const cardHeight = activeCard.offsetHeight;
+      const stackOffset = 28;
+      this.viewport.style.minHeight = `${cardHeight + stackOffset}px`;
+
+      this.cards.forEach((card) => {
+        card.style.minHeight = `${cardHeight}px`;
+      });
+    }
+
+    #resetDragStyles() {
+      this.cards.forEach((card) => {
+        card.style.removeProperty('transform');
+        card.style.removeProperty('transition');
+      });
+    }
+
+    #bindEvents() {
+      this.dots.forEach((dot) => {
+        dot.addEventListener('click', () => {
+          if (!this.#isMobile()) return;
+          this.#goTo(Number(dot.dataset.slideTo));
+        });
+      });
+
+      const onStart = (clientX) => {
+        if (!this.#isMobile()) return;
+        this.isDragging = true;
+        this.dragStartX = clientX;
+        this.dragDeltaX = 0;
+        this.cards.forEach((card) => {
+          card.style.transition = 'none';
+        });
+      };
+
+      const onMove = (clientX) => {
+        if (!this.isDragging || !this.#isMobile()) return;
+        this.dragDeltaX = clientX - this.dragStartX;
+        const activeCard = this.cards[this.current];
+        if (activeCard) {
+          activeCard.style.transform = `translateX(calc(-50% + ${this.dragDeltaX}px)) translateY(0) scale(1)`;
+        }
+      };
+
+      const onEnd = () => {
+        if (!this.isDragging || !this.#isMobile()) return;
+        this.isDragging = false;
+        this.#resetDragStyles();
+
+        const threshold = 48;
+        if (this.dragDeltaX <= -threshold) {
+          this.#next();
+        } else if (this.dragDeltaX >= threshold) {
+          this.#prev();
+        } else {
+          this.#updateStack();
+        }
+
+        this.dragDeltaX = 0;
+      };
+
+      this.viewport.addEventListener('touchstart', (event) => {
+        onStart(event.touches[0].clientX);
+      }, { passive: true });
+
+      this.viewport.addEventListener('touchmove', (event) => {
+        onMove(event.touches[0].clientX);
+      }, { passive: true });
+
+      this.viewport.addEventListener('touchend', onEnd, { passive: true });
+      this.viewport.addEventListener('touchcancel', onEnd, { passive: true });
+
+      this.viewport.addEventListener('mousedown', (event) => {
+        onStart(event.clientX);
+      });
+
+      window.addEventListener('mousemove', (event) => {
+        if (!this.isDragging) return;
+        onMove(event.clientX);
+      });
+
+      window.addEventListener('mouseup', onEnd);
+    }
+  }
+
+  document.querySelectorAll('[data-ceramides-carousel]').forEach((root) => {
+    new ToveeCeramidesCarousel(root);
+  });
+
+  document.addEventListener('shopify:section:load', (event) => {
+    const root = event.target.querySelector('[data-ceramides-carousel]');
+    if (root) new ToveeCeramidesCarousel(root);
+  });
+</script>
+
+{% stylesheet %}
+  .tovee-ceramides-section {
+    position: relative;
+    font-family: var(--font-body--family);
+    overflow: hidden;
+  }
+
+  .tovee-ceramides__inner {
+    padding-inline: 24px;
+    margin-inline: auto;
+    max-width: 1400px;
+  }
+
+  .tovee-ceramides__header {
+    text-align: center;
+    max-width: 680px;
+    margin: 0 auto 56px;
+  }
+
+  .tovee-ceramides__subtitle {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--tovee-accent);
+    margin-bottom: 16px;
+  }
+
+  .tovee-ceramides__title {
+    font-family: var(--font-heading--family);
+    font-size: 2rem;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    margin: 0 0 20px;
+    line-height: 1.25;
+  }
+
+  .tovee-ceramides__desc {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    opacity: 0.85;
+    margin: 0;
+    font-weight: 300;
+  }
+
+  .tovee-ceramides__cards-wrap {
+    position: relative;
+  }
+
+  .tovee-ceramides__carousel-viewport {
+    position: relative;
+  }
+
+  .tovee-ceramides__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .tovee-ceramides__dots {
+    display: none;
+  }
+
+  .tovee-ceramides__dot {
+    width: 7px;
+    height: 7px;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: rgba(46, 8, 8, 0.18);
+    cursor: pointer;
+    transition: transform 0.3s ease, background 0.3s ease, width 0.3s ease;
+  }
+
+  .tovee-ceramides__dot.is-active {
+    width: 22px;
+    background: var(--tovee-accent);
+  }
+
+  .tovee-ceramides__dot:focus-visible {
+    outline: 2px solid var(--tovee-accent);
+    outline-offset: 3px;
+  }
+
+  .tovee-ceramides__card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 32px 28px;
+    text-align: center;
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 0.4s ease, box-shadow 0.4s ease;
+  }
+
+  /* Light theme variations */
+  .tovee-ceramides-section[style*="background-color: #FAF5F5"] .tovee-ceramides__card,
+  .tovee-ceramides-section[style*="background-color: #FAF3F0"] .tovee-ceramides__card,
+  .tovee-ceramides-section[style*="background-color: #faf5f5"] .tovee-ceramides__card,
+  .tovee-ceramides-section[style*="background-color: #faf3f0"] .tovee-ceramides__card {
+    background: rgba(46, 8, 8, 0.02);
+    border: 1px solid rgba(46, 8, 8, 0.05);
+  }
+
+  .tovee-ceramides__card:hover {
+    transform: translateY(-5px);
+    border-color: var(--tovee-accent);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+  }
+
+  .tovee-ceramides__card-icon-wrapper {
+    width: 56px;
+    height: 56px;
+    border-radius: 50px;
+    background: rgba(215, 181, 181, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    color: var(--tovee-accent);
+    transition: transform 0.4s ease, background 0.4s ease;
+  }
+
+  .tovee-ceramides__card:hover .tovee-ceramides__card-icon-wrapper {
+    transform: scale(1.1);
+    background: var(--tovee-accent);
+    color: #ffffff;
+  }
+
+  .tovee-ceramides__card-icon {
+    width: 24px;
+    height: 24px;
+    display: block;
+  }
+
+  .tovee-ceramides__card-title {
+    font-family: var(--font-heading--family);
+    font-size: 1.15rem;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    margin: 0 0 12px;
+  }
+
+  .tovee-ceramides__card-text {
+    font-size: 0.85rem;
+    line-height: 1.65;
+    opacity: 0.8;
+    margin: 0;
+    font-weight: 300;
+  }
+
+  @media screen and (max-width: 749px) {
+    .tovee-ceramides__header {
+      margin-bottom: 40px;
+    }
+
+    .tovee-ceramides__carousel-viewport {
+      touch-action: manipulation;
+      min-height: 280px;
+      margin-inline: -4px;
+      padding-bottom: 4px;
+    }
+
+    .tovee-ceramides__grid {
+      display: block;
+      position: relative;
+      min-height: inherit;
+    }
+
+    .tovee-ceramides__card {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: calc(100% - 8px);
+      margin: 0;
+      overflow: hidden;
+      transform: translateX(-50%);
+      transform-origin: center top;
+      transition:
+        transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        opacity 0.45s ease,
+        box-shadow 0.45s ease;
+      will-change: transform, opacity;
+      box-shadow: 0 8px 24px rgba(46, 8, 8, 0.06);
+    }
+
+    .tovee-ceramides__card:not(.is-active) .tovee-ceramides__card-icon-wrapper,
+    .tovee-ceramides__card:not(.is-active) .tovee-ceramides__card-title,
+    .tovee-ceramides__card:not(.is-active) .tovee-ceramides__card-text {
+      visibility: hidden;
+      opacity: 0;
+      height: 0;
+      margin: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .tovee-ceramides__card.is-active {
+      z-index: 3;
+      opacity: 1;
+      transform: translateX(-50%) translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .tovee-ceramides__card.is-next {
+      z-index: 2;
+      opacity: 1;
+      transform: translateX(-50%) translateY(14px) scale(0.96);
+      pointer-events: none;
+    }
+
+    .tovee-ceramides__card.is-prev {
+      z-index: 1;
+      opacity: 1;
+      transform: translateX(-50%) translateY(26px) scale(0.92);
+      pointer-events: none;
+    }
+
+    .tovee-ceramides__card.is-hidden {
+      z-index: 0;
+      opacity: 0;
+      transform: translateX(-50%) translateY(34px) scale(0.88);
+      pointer-events: none;
+    }
+
+    .tovee-ceramides__card:hover {
+      transform: translateX(-50%) translateY(0) scale(1);
+      box-shadow: 0 8px 24px rgba(46, 8, 8, 0.06);
+    }
+
+    .tovee-ceramides__card.is-next:hover,
+    .tovee-ceramides__card.is-prev:hover,
+    .tovee-ceramides__card.is-hidden:hover {
+      transform: translateX(-50%) translateY(14px) scale(0.96);
+    }
+
+    .tovee-ceramides__dots {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 28px;
+    }
+  }
+
+  @media screen and (min-width: 750px) {
+    .tovee-ceramides__inner {
+      padding-inline: 40px;
+    }
+
+    .tovee-ceramides__grid {
+      position: static;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 32px;
+    }
+
+    .tovee-ceramides__card {
+      position: static;
+      width: auto;
+      transform: none !important;
+      opacity: 1 !important;
+      pointer-events: auto;
+      box-shadow: none;
+      z-index: auto;
+    }
+    
+    .tovee-ceramides__title {
+      font-size: 2.5rem;
+    }
+  }
+
+  @media screen and (min-width: 990px) {
+    .tovee-ceramides__inner {
+      padding-inline: 60px;
+    }
+
+    .tovee-ceramides__grid {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+    
+    .tovee-ceramides__header {
+      margin-bottom: 72px;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Tovee Ceramides Info",
+  "tag": "section",
+  "class": "tovee-ceramides-info",
+  "max_blocks": 4,
+  "settings": [
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background color",
+      "default": "#FAF5F5"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text color",
+      "default": "#2E0808"
+    },
+    {
+      "type": "color",
+      "id": "heading_color",
+      "label": "Heading color",
+      "info": "Leave blank to inherit the main text color."
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "Accent color",
+      "default": "#C49292"
+    },
+    {
+      "type": "header",
+      "content": "Section Header"
+    },
+    {
+      "type": "text",
+      "id": "subtitle",
+      "label": "Section Subtitle",
+      "default": "Skincare Essentials"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Section Title",
+      "default": "Why Ceramides Matter"
+    },
+    {
+      "type": "textarea",
+      "id": "description",
+      "label": "Section Description",
+      "default": "Ceramides are natural lipids that make up over 50% of the skin’s barrier. They act as the essential glue holding skin cells together for a healthy, glowing complexion."
+    },
+    {
+      "type": "header",
+      "content": "Section Padding"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Top padding",
+      "min": 40,
+      "max": 120,
+      "step": 5,
+      "unit": "px",
+      "default": 80
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Bottom padding",
+      "min": 40,
+      "max": 120,
+      "step": 5,
+      "unit": "px",
+      "default": 80
+    }
+  ],
+  "blocks": [
+    {
+      "type": "info_card",
+      "name": "Info Card",
+      "settings": [
+        {
+          "type": "select",
+          "id": "icon",
+          "label": "Icon",
+          "options": [
+            {
+              "value": "shield",
+              "label": "Shield (Barrier)"
+            },
+            {
+              "value": "droplet",
+              "label": "Droplet (Hydration)"
+            },
+            {
+              "value": "sparkle",
+              "label": "Sparkle (Anti-aging)"
+            },
+            {
+              "value": "leaf",
+              "label": "Leaf (Soothing)"
+            }
+          ],
+          "default": "shield"
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Card Heading",
+          "default": "Restore Skin Barrier"
+        },
+        {
+          "type": "textarea",
+          "id": "text",
+          "label": "Card Text",
+          "default": "Locks in hydration while shielding your skin from harmful environmental aggressors and pollutants."
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Tovee Ceramides Info",
+      "blocks": [
+        {
+          "type": "info_card",
+          "settings": {
+            "icon": "shield",
+            "title": "Barrier Defense",
+            "text": "Locks in essential hydration while shielding your delicate skin barrier from external aggressors."
+          }
+        },
+        {
+          "type": "info_card",
+          "settings": {
+            "icon": "droplet",
+            "title": "Intense Moisture",
+            "text": "Prevents transepidermal moisture loss, keeping your skin continuously plumped and hydrated."
+          }
+        },
+        {
+          "type": "info_card",
+          "settings": {
+            "icon": "sparkle",
+            "title": "Anti-Aging Effect",
+            "text": "Smooths the appearance of fine lines and boosts natural suppleness for a youthful glow."
+          }
+        },
+        {
+          "type": "info_card",
+          "settings": {
+            "icon": "leaf",
+            "title": "Soothe & Calm",
+            "text": "Reduces redness, calms skin irritation, and restores optimal lipid balance to sensitive skin."
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

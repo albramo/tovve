@@ -1,0 +1,787 @@
+<div class="tovee-footer" style="background-color: {{ section.settings.background_color }};" {{ section.shopify_attributes }}>
+  <div class="tovee-footer__divider"></div>
+
+  <div class="tovee-footer__inner page-width">
+    <div class="tovee-footer__grid">
+      {% for block in section.blocks %}
+        {% case block.type %}
+          {% when 'brand_info' %}
+            <div class="tovee-footer__block tovee-footer__block--brand" {{ block.shopify_attributes }}>
+              {% if block.settings.logo != blank %}
+                <a href="{{ routes.root_url }}" class="tovee-footer__logo-link" aria-label="{{ shop.name }}">
+                  {{
+                    block.settings.logo
+                    | image_url: width: block.settings.logo_width
+                    | image_tag:
+                      class: 'tovee-footer__logo',
+                      alt: shop.name,
+                      loading: 'lazy'
+                  }}
+                </a>
+              {% elsif settings.logo != blank %}
+                <a href="{{ routes.root_url }}" class="tovee-footer__logo-link" aria-label="{{ shop.name }}">
+                  {{
+                    settings.logo
+                    | image_url: width: block.settings.logo_width | default: 180
+                    | image_tag:
+                      class: 'tovee-footer__logo',
+                      alt: shop.name,
+                      loading: 'lazy'
+                  }}
+                </a>
+              {% else %}
+                <a href="{{ routes.root_url }}" class="tovee-footer__wordmark">{{ shop.name }}</a>
+              {% endif %}
+
+              {% if block.settings.tagline != blank %}
+                <p class="tovee-footer__tagline">{{ block.settings.tagline }}</p>
+              {% endif %}
+
+              <div class="tovee-footer__social">
+                {% if block.settings.instagram_url != blank %}
+                  <a href="{{ block.settings.instagram_url }}" class="tovee-footer__social-link" target="_blank" rel="noopener" aria-label="Instagram">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                  </a>
+                {% endif %}
+                {% if block.settings.tiktok_url != blank %}
+                  <a href="{{ block.settings.tiktok_url }}" class="tovee-footer__social-link" target="_blank" rel="noopener" aria-label="TikTok">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.87a8.19 8.19 0 0 0 4.78 1.52V7.01a4.85 4.85 0 0 1-1.01-.32z"/></svg>
+                  </a>
+                {% endif %}
+                {% if block.settings.facebook_url != blank %}
+                  <a href="{{ block.settings.facebook_url }}" class="tovee-footer__social-link" target="_blank" rel="noopener" aria-label="Facebook">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                  </a>
+                {% endif %}
+                {% if block.settings.youtube_url != blank %}
+                  <a href="{{ block.settings.youtube_url }}" class="tovee-footer__social-link" target="_blank" rel="noopener" aria-label="YouTube">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.97C5.12 20 12 20 12 20s6.88 0 8.59-.45a2.78 2.78 0 0 0 1.95-1.97A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="#fff"/></svg>
+                  </a>
+                {% endif %}
+                {% if block.settings.whatsapp_url != blank %}
+                  <a href="{{ block.settings.whatsapp_url }}" class="tovee-footer__social-link tovee-footer__social-link--whatsapp" target="_blank" rel="noopener" aria-label="WhatsApp">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+                  </a>
+                {% endif %}
+              </div>
+            </div>
+
+          {% when 'nav_column' %}
+            <div class="tovee-footer__block tovee-footer__block--nav" {{ block.shopify_attributes }}>
+              {% assign footer_menu = linklists[block.settings.menu] %}
+              {% assign nav_title = block.settings.title | default: footer_menu.title %}
+              
+              <details class="tovee-footer__accordion" open>
+                <summary class="tovee-footer__summary">
+                  <h4 class="tovee-footer__title">{{ nav_title }}</h4>
+                  <svg class="tovee-footer__arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </summary>
+                <div class="tovee-footer__accordion-content">
+                  <ul class="tovee-footer__nav-list">
+                    {% for link in footer_menu.links %}
+                      <li>
+                        <a href="{{ link.url }}" class="tovee-footer__nav-link">{{ link.title }}</a>
+                      </li>
+                    {% else %}
+                      <li class="tovee-footer__no-links">Select a menu in theme settings</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              </details>
+            </div>
+
+          {% when 'policies_column' %}
+            <div class="tovee-footer__block tovee-footer__block--nav" {{ block.shopify_attributes }}>
+              <details class="tovee-footer__accordion" open>
+                <summary class="tovee-footer__summary">
+                  <h4 class="tovee-footer__title">{{ block.settings.title | default: 'Policies' }}</h4>
+                  <svg class="tovee-footer__arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </summary>
+                <div class="tovee-footer__accordion-content">
+                  <ul class="tovee-footer__nav-list">
+                    {%- if block.settings.show_privacy -%}
+                      {%- assign privacy_policy = shop.policies | where: "title", "Privacy Policy" | first -%}
+                      <li>
+                        <a href="{{ privacy_policy.url | default: '/policies/privacy-policy' }}" class="tovee-footer__nav-link">Privacy Policy</a>
+                      </li>
+                    {%- endif -%}
+
+                    {%- if block.settings.show_terms -%}
+                      {%- assign terms_policy = shop.policies | where: "title", "Terms of Service" | first -%}
+                      <li>
+                        <a href="{{ terms_policy.url | default: '/policies/terms-of-service' }}" class="tovee-footer__nav-link">Terms of Service</a>
+                      </li>
+                    {%- endif -%}
+
+                    {%- if block.settings.show_shipping -%}
+                      {%- assign shipping_policy = shop.policies | where: "title", "Shipping Policy" | first -%}
+                      <li>
+                        <a href="{{ shipping_policy.url | default: '/policies/shipping-policy' }}" class="tovee-footer__nav-link">Shipping Policy</a>
+                      </li>
+                    {%- endif -%}
+
+                    {%- if block.settings.show_contact -%}
+                      <li>
+                        <a href="/pages/contact" class="tovee-footer__nav-link">Contact Information</a>
+                      </li>
+                    {%- endif -%}
+
+                    {%- if block.settings.show_refund -%}
+                      {%- assign refund_policy = shop.policies | where: "title", "Refund Policy" | first -%}
+                      <li>
+                        <a href="{{ refund_policy.url | default: '/policies/refund-policy' }}" class="tovee-footer__nav-link">Refund Policy</a>
+                      </li>
+                    {%- endif -%}
+                  </ul>
+                </div>
+              </details>
+            </div>
+
+          {% when 'newsletter' %}
+            <div class="tovee-footer__block tovee-footer__block--newsletter" {{ block.shopify_attributes }}>
+              <details class="tovee-footer__accordion" open>
+                <summary class="tovee-footer__summary">
+                  <h4 class="tovee-footer__title">{{ block.settings.title | default: 'Stay in the Glow' }}</h4>
+                  <svg class="tovee-footer__arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </summary>
+                <div class="tovee-footer__accordion-content">
+                  {% if block.settings.text != blank %}
+                    <p class="tovee-footer__newsletter-text">{{ block.settings.text }}</p>
+                  {% endif %}
+
+                  {% form 'customer', id: 'tovee-footer-newsletter' %}
+                    {% if form.posted_successfully? %}
+                      <p class="tovee-footer__newsletter-success">Thank you for subscribing ✦</p>
+                    {% else %}
+                      <div class="tovee-footer__newsletter-form">
+                        <input type="hidden" name="contact[tags]" value="newsletter">
+                        <input
+                          type="email"
+                          name="contact[email]"
+                          class="tovee-footer__newsletter-input"
+                          placeholder="{{ block.settings.placeholder | default: 'Your email address' }}"
+                          required
+                          autocomplete="email"
+                          aria-label="Email address"
+                        >
+                        <button type="submit" class="tovee-footer__newsletter-btn" aria-label="Subscribe">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </button>
+                      </div>
+                    {% endif %}
+                  {% endform %}
+                </div>
+              </details>
+            </div>
+        {% endcase %}
+      {% endfor %}
+    </div>
+  </div>
+
+  {%- comment -%} ── BOTTOM BAR: COPYRIGHT ── {%- endcomment -%}
+  <div class="tovee-footer__bottom">
+    <div class="tovee-footer__bottom-inner page-width">
+      <span class="tovee-footer__copyright">
+        &copy; {{ 'now' | date: '%Y' }} {{ section.settings.copyright_owner | default: shop.name }} — by tovee
+      </span>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    function handleFooterAccordions() {
+      const isMobile = window.matchMedia('(max-width: 749px)').matches;
+      const accordions = document.querySelectorAll('.tovee-footer__accordion');
+      accordions.forEach(function(acc) {
+        if (isMobile) {
+          acc.removeAttribute('open');
+        } else {
+          acc.setAttribute('open', '');
+        }
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', handleFooterAccordions);
+    } else {
+      handleFooterAccordions();
+    }
+
+    let resizeTimer;
+    window.addEventListener('resize', function() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(handleFooterAccordions, 100);
+    });
+  })();
+</script>
+
+{% stylesheet %}
+  .tovee-footer {
+    background-color: #241c1c;
+    color: rgba(255, 255, 255, 0.65);
+    font-family: var(--font-body--family);
+    position: relative;
+  }
+
+  .tovee-footer__divider {
+    width: 100%;
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .tovee-footer__inner {
+    padding-block: 60px 48px;
+    padding-inline: 24px;
+    max-width: 1400px;
+    margin-inline: auto;
+  }
+
+  .tovee-footer__grid {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  @media screen and (min-width: 750px) {
+    .tovee-footer__inner {
+      padding-block: 80px 60px;
+      padding-inline: 40px;
+    }
+
+    .tovee-footer__grid {
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 48px 32px;
+    }
+  }
+
+  @media screen and (min-width: 990px) {
+    .tovee-footer__inner {
+      padding-inline: 60px;
+    }
+  }
+
+  /* Footer Columns Sizes & Order */
+  .tovee-footer__block {
+    flex: 1 1 100%;
+  }
+
+  .tovee-footer__block--brand {
+    order: 1;
+  }
+
+  .tovee-footer__block--nav {
+    order: 2;
+  }
+
+  .tovee-footer__block--newsletter {
+    order: 3;
+  }
+
+  @media screen and (min-width: 750px) {
+    .tovee-footer__block--brand {
+      flex: 1.6 1 280px;
+    }
+    .tovee-footer__block--nav {
+      flex: 1 1 160px;
+    }
+    .tovee-footer__block--newsletter {
+      flex: 1.5 1 280px;
+    }
+  }
+
+  /* Brand Block */
+  .tovee-footer__logo-link {
+    display: inline-block;
+    margin-bottom: 24px;
+  }
+
+  .tovee-footer__logo {
+    height: 26px;
+    width: auto;
+    display: block;
+    filter: brightness(0) invert(1);
+    opacity: 0.95;
+    transition: opacity 0.3s ease;
+  }
+
+  .tovee-footer__logo:hover {
+    opacity: 1;
+  }
+
+  .tovee-footer__wordmark {
+    display: inline-block;
+    font-family: var(--font-heading--family);
+    font-size: 1.25rem;
+    font-weight: 300;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: #ffffff;
+    text-decoration: none;
+    margin-bottom: 24px;
+    transition: opacity 0.3s ease;
+  }
+
+  .tovee-footer__wordmark:hover {
+    opacity: 0.85;
+  }
+
+  .tovee-footer__tagline {
+    font-size: 0.775rem;
+    line-height: 1.75;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0 0 28px;
+    max-width: 320px;
+    font-weight: 300;
+    letter-spacing: 0.01em;
+  }
+
+  .tovee-footer__social {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .tovee-footer__social-link {
+    color: rgba(255, 255, 255, 0.8);
+    transition: color 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tovee-footer__social-link svg {
+    width: 22px;
+    height: 22px;
+    display: block;
+  }
+
+  .tovee-footer__social-link:hover {
+    color: #ffffff;
+    transform: translateY(-2px);
+  }
+
+  /* WhatsApp gets its own brand green on hover */
+  .tovee-footer__social-link--whatsapp:hover {
+    color: #25D366;
+  }
+
+  /* Headers & Accordions */
+  .tovee-footer__title {
+    font-family: var(--font-body--family);
+    font-size: 0.725rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #ffffff;
+    margin: 0 0 24px 0;
+  }
+
+  .tovee-footer__summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .tovee-footer__summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .tovee-footer__summary .tovee-footer__title {
+    margin: 0;
+  }
+
+  .tovee-footer__arrow {
+    color: rgba(255, 255, 255, 0.6);
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), color 0.3s ease;
+    flex-shrink: 0;
+  }
+
+  .tovee-footer__accordion[open] .tovee-footer__arrow {
+    transform: rotate(180deg);
+    color: #ffffff;
+  }
+
+  .tovee-footer__accordion-content {
+    padding-top: 14px;
+    padding-bottom: 8px;
+  }
+
+  @media screen and (min-width: 750px) {
+    .tovee-footer__summary {
+      cursor: default;
+      pointer-events: none;
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .tovee-footer__summary .tovee-footer__title {
+      margin: 0 0 24px 0;
+    }
+
+    .tovee-footer__arrow {
+      display: none !important;
+    }
+
+    .tovee-footer__accordion-content {
+      display: block !important;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
+    .tovee-footer__accordion:not([open]) .tovee-footer__accordion-content {
+      display: block !important;
+    }
+  }
+
+  /* Navigation Links */
+  .tovee-footer__nav-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .tovee-footer__nav-link {
+    font-size: 0.8rem;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+    letter-spacing: 0.03em;
+    transition: color 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    display: inline-block;
+  }
+
+  .tovee-footer__nav-link:hover {
+    color: #ffffff;
+    transform: translateX(3px);
+  }
+
+  .tovee-footer__no-links {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-style: italic;
+  }
+
+  /* Newsletter */
+  .tovee-footer__newsletter-text {
+    font-size: 0.8rem;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 300;
+    margin: 0 0 24px;
+    max-width: 280px;
+  }
+
+  .tovee-footer__newsletter-form {
+    display: flex !important;
+    align-items: center !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    transition: border-color 0.3s ease;
+    max-width: 320px;
+    padding-bottom: 4px;
+    box-shadow: none !important;
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-radius: 0 !important;
+  }
+
+  .tovee-footer__newsletter-form:focus-within {
+    border-color: rgba(255, 255, 255, 0.8) !important;
+    border-bottom-color: rgba(255, 255, 255, 0.8) !important;
+  }
+
+  .tovee-footer__newsletter-input {
+    flex: 1;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    color: #ffffff !important;
+    font-family: var(--font-body--family);
+    font-size: 0.8rem;
+    font-weight: 300;
+    letter-spacing: 0.03em;
+    padding: 8px 0 !important;
+    min-width: 0;
+    height: auto !important;
+  }
+
+  .tovee-footer__newsletter-input::placeholder {
+    color: rgba(255, 255, 255, 0.35);
+  }
+
+  .tovee-footer__newsletter-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    padding: 8px 0 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.3s ease, transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .tovee-footer__newsletter-btn:hover {
+    color: #ffffff;
+    transform: translateX(4px);
+  }
+
+  .tovee-footer__newsletter-success {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.85);
+    letter-spacing: 0.04em;
+    padding: 8px 0;
+    font-style: italic;
+  }
+
+  /* Bottom Copyright Bar */
+  .tovee-footer__bottom {
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    background-color: rgba(0, 0, 0, 0.08);
+  }
+
+  .tovee-footer__bottom-inner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding-block: 20px;
+    padding-inline: 24px;
+    max-width: 1400px;
+    margin-inline: auto;
+  }
+
+  @media screen and (min-width: 750px) {
+    .tovee-footer__bottom-inner {
+      padding-inline: 40px;
+    }
+  }
+
+  @media screen and (min-width: 990px) {
+    .tovee-footer__bottom-inner {
+      padding-inline: 60px;
+    }
+  }
+
+  .tovee-footer__copyright {
+    font-size: 0.725rem;
+    color: rgba(255, 255, 255, 0.65);
+    letter-spacing: 0.05em;
+    font-weight: 300;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Tovee Footer",
+  "tag": "section",
+  "class": "tovee-footer-section",
+  "max_blocks": 6,
+  "enabled_on": {
+    "groups": ["footer"]
+  },
+  "settings": [
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Footer background color",
+      "default": "#241c1c"
+    },
+    {
+      "type": "header",
+      "content": "Bottom Bar"
+    },
+    {
+      "type": "text",
+      "id": "copyright_owner",
+      "label": "Copyright owner name",
+      "default": "Tovee Beauty"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "brand_info",
+      "name": "Brand Identity",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "logo",
+          "label": "Logo image"
+        },
+        {
+          "type": "range",
+          "id": "logo_width",
+          "label": "Logo width",
+          "min": 60,
+          "max": 300,
+          "step": 10,
+          "unit": "px",
+          "default": 100
+        },
+        {
+          "type": "text",
+          "id": "tagline",
+          "label": "Brand tagline",
+          "default": "Clean beauty for your skin, and the planet. Rooted in nature, refined by science."
+        },
+        {
+          "type": "url",
+          "id": "instagram_url",
+          "label": "Instagram URL"
+        },
+        {
+          "type": "url",
+          "id": "tiktok_url",
+          "label": "TikTok URL"
+        },
+        {
+          "type": "url",
+          "id": "facebook_url",
+          "label": "Facebook URL"
+        },
+        {
+          "type": "url",
+          "id": "youtube_url",
+          "label": "YouTube URL"
+        },
+        {
+          "type": "url",
+          "id": "whatsapp_url",
+          "label": "WhatsApp URL",
+          "info": "Use https://wa.me/PHONENUMBER format"
+        }
+      ]
+    },
+    {
+      "type": "nav_column",
+      "name": "Navigation Menu",
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Column heading",
+          "info": "Leave blank to use the selected menu's title."
+        },
+        {
+          "type": "link_list",
+          "id": "menu",
+          "label": "Select Menu",
+          "default": "footer",
+          "info": "Only links you configure in Shopify Online Store > Navigation will display here."
+        }
+      ]
+    },
+    {
+      "type": "policies_column",
+      "name": "Policies Column",
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Column heading",
+          "default": "Policies"
+        },
+        {
+          "type": "checkbox",
+          "id": "show_privacy",
+          "label": "Show Privacy Policy",
+          "default": true
+        },
+        {
+          "type": "checkbox",
+          "id": "show_terms",
+          "label": "Show Terms of Service",
+          "default": true
+        },
+        {
+          "type": "checkbox",
+          "id": "show_shipping",
+          "label": "Show Shipping Policy",
+          "default": true
+        },
+        {
+          "type": "checkbox",
+          "id": "show_contact",
+          "label": "Show Contact Information",
+          "default": true
+        },
+        {
+          "type": "checkbox",
+          "id": "show_refund",
+          "label": "Show Refund Policy",
+          "default": true
+        }
+      ]
+    },
+    {
+      "type": "newsletter",
+      "name": "Newsletter",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Newsletter heading",
+          "default": "Stay in the Glow"
+        },
+        {
+          "type": "text",
+          "id": "text",
+          "label": "Newsletter description",
+          "default": "Exclusive rituals, new arrivals & skincare secrets — straight to your inbox."
+        },
+        {
+          "type": "text",
+          "id": "placeholder",
+          "label": "Email placeholder text",
+          "default": "Your email address"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Tovee Footer",
+      "blocks": [
+        {
+          "type": "brand_info",
+          "settings": {
+            "tagline": "Clean beauty for your skin, and the planet. Rooted in nature, refined by science."
+          }
+        },
+        {
+          "type": "nav_column",
+          "settings": {
+            "title": "Shop",
+            "menu": "footer"
+          }
+        },
+        {
+          "type": "newsletter",
+          "settings": {
+            "title": "Stay in the Glow",
+            "text": "Exclusive rituals, new arrivals & skincare secrets — straight to your inbox."
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}
+

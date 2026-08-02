@@ -1,0 +1,206 @@
+<!doctype html>
+<html
+  {% if request.design_mode %}
+    class="shopify-design-mode"
+  {% endif %}
+  lang="{{ request.locale.iso_code }}"
+>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <title>TOVEE</title>
+
+    <!-- Prevent Mobile FOUC / Layout Shift -->
+    <script>
+      (function() {
+        if ('ontouchstart' in window || window.innerWidth < 750) {
+          document.documentElement.classList.add('is-mobile-device');
+        }
+      })();
+    </script>
+
+    <!-- 1. Preconnect Connections & Resource Hints -->
+    <link rel="preconnect" href="https://cdn.shopify.com" crossorigin>
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+    <link rel="dns-prefetch" href="https://connect.facebook.net">
+    <link rel="dns-prefetch" href="https://api.goaffpro.com">
+
+    <!-- 2. Dynamic Canonical URL (SEO Fix) -->
+    <link rel="canonical" href="{{ canonical_url }}">
+
+    <!-- 3. Preload Critical Images (Performance / LCP Fix) -->
+    {% if request.page_type == 'product' and product.featured_image %}
+      <link 
+        rel="preload" 
+        as="image" 
+        href="{{ product.featured_image | image_url: width: 800 }}" 
+        imagesrcset="{{ product.featured_image | image_url: width: 600 }} 600w, {{ product.featured_image | image_url: width: 1000 }} 1000w"
+        imagesizes="(max-width: 749px) 100vw, 50vw"
+        fetchpriority="high"
+      >
+    {% elsif request.page_type == 'collection' and collection.image %}
+      <link rel="preload" as="image" href="{{ collection.image | image_url: width: 800 }}" fetchpriority="high">
+    {% elsif request.page_type == 'index' and settings.logo %}
+      <link rel="preload" as="image" href="{{ settings.logo | image_url: width: 400 }}" fetchpriority="high">
+    {% endif %}
+
+    <!-- 4. SEO & Meta Tags -->
+    <meta name="description" content="Discover TOVEE skincare products including facial cleansers and moisturizers. Science-backed formulas for healthy, hydrated, and radiant skin in Egypt.">
+    <meta name="keywords" content="TOVEE, skincare, moisturizer, cleanser, face wash, skincare Egypt, facial moisturizer, skin care products, مرطب, غسول, عناية بالبشرة, مرطب للوجه">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="TOVEE">
+    <meta name="google-site-verification" content="iGcBWGDkdtNNU-QkNYJ9pLTZd-dunAuy3fBSUOCgsZ0" />
+
+    <!-- Open Graph & Social Meta -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="TOVEE | Premium Skincare Egypt">
+    <meta property="og:description" content="Discover TOVEE facial cleansers and moisturizers for healthy glowing skin.">
+    <meta property="og:image" content="https://tovee.store/og-image.jpg">
+    <meta property="og:url" content="{{ canonical_url }}">
+    <meta property="og:site_name" content="TOVEE">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="TOVEE | Premium Skincare Egypt">
+    <meta name="twitter:description" content="Premium cleansers and moisturizers for healthy skin.">
+    <meta name="twitter:image" content="https://tovee.store/og-image.jpg">
+
+    <!-- Structured Data (Schema) -->
+    <script type="application/ld+json">
+    {
+      "@context":"https://schema.org",
+      "@type":"Organization",
+      "name":"TOVEE",
+      "url":"https://tovee.store",
+      "logo":"https://tovee.store/logo.png",
+      "sameAs":[
+        "https://www.facebook.com/toveecosmetics",
+        "https://www.instagram.com/tovee.cosmetics",
+        "https://www.tiktok.com/@tovee.cosmetics"
+      ]
+    }
+    </script>
+
+    {%- if settings.favicon != blank -%}
+      <link
+        rel="icon"
+        type="image/png"
+        href="{{ settings.favicon | image_url: width: 32, height: 32 }}"
+      >
+    {%- endif -%}
+
+    {% if settings.transition_to_main_product or settings.page_transition_enabled %}
+      <link
+        rel="expect"
+        href="#MainContent"
+        blocking="render"
+        id="view-transition-render-blocker"
+      >
+    {% endif %}
+
+    <!-- Shopify Render Assets -->
+    {%- render 'meta-tags' -%}
+    {%- render 'stylesheets' -%}
+    {%- render 'fonts' -%}
+    {%- render 'scripts' -%}
+    {%- render 'theme-styles-variables' -%}
+    {%- render 'color-palette' -%}
+
+    {% if request.design_mode %}
+      {%- render 'theme-editor' -%}
+    {% endif %}
+
+    {{ content_for_header }}
+  </head>
+
+  <body class="page-width-{{ settings.page_width }} card-hover-effect-{{ settings.card_hover_effect }}">
+    {% render 'skip-to-content-link', href: '#MainContent', text: 'accessibility.skip_to_text' %}
+
+    {% render 'chat-drawer' %}
+
+    <div class="page-wrapper">
+      <div id="header-group">
+        {% sections 'header-group' %}
+      </div>
+
+      <script>
+        (function setHeaderHeighCustomProperties() {
+          const header = document.querySelector('header-component');
+          const headerGroup = document.querySelector('#header-group');
+          const hasHeaderSection = headerGroup?.querySelector('.header-section');
+
+          if (!header || !headerGroup) return;
+
+          const headerTopRow = header.querySelector('.header__row--top');
+          const headerHeight = header.offsetHeight;
+
+          let headerGroupHeight = 0;
+          const children = headerGroup.children;
+          for (let i = 0; i < children.length; i++) {
+            const element = children[i];
+            if (element === header || !(element instanceof HTMLElement)) continue;
+            headerGroupHeight += element.offsetHeight;
+          }
+
+          if (header.hasAttribute('transparent') && header.parentElement?.nextElementSibling) {
+            headerGroupHeight += headerHeight;
+          }
+
+          document.body.style.setProperty('--header-height', `${headerHeight}px`);
+          document.body.style.setProperty('--header-group-height', `${headerGroupHeight}px`);
+
+          if (headerTopRow) {
+            window.requestAnimationFrame(function () {
+              document.body.style.setProperty('--top-row-height', `${headerTopRow.offsetHeight}px`);
+            });
+          }
+
+          if (!hasHeaderSection || !header?.hasAttribute('transparent')) {
+            document.body.style.setProperty('--transparent-header-offset-boolean', '0');
+            return;
+          }
+
+          const hasImmediateSection = hasHeaderSection.nextElementSibling?.classList.contains('shopify-section');
+          const shouldApplyOffset = !hasImmediateSection ? '1' : '0';
+          document.body.style.setProperty('--transparent-header-offset-boolean', shouldApplyOffset);
+        })();
+
+        (function setHeaderMenuStyle() {
+          const headerComponent = document.querySelector('#header-component');
+          if (headerComponent) {
+            const isTouchDevice = 'ontouchstart' in window && navigator.maxTouchPoints > 0;
+            const overflowList = headerComponent?.querySelector('overflow-list');
+            const hasReachedMinimum = overflowList && overflowList.hasAttribute('minimum-reached');
+            headerComponent.dataset.menuStyle = isTouchDevice || hasReachedMinimum ? 'drawer' : 'menu';
+          }
+        })();
+      </script>
+
+      <main
+        id="MainContent"
+        class="content-for-layout"
+        role="main"
+        data-page-transition-enabled="{{ settings.page_transition_enabled }}"
+        data-product-transition="{{ settings.transition_to_main_product }}"
+        data-template="{{ template }}"
+      >
+        {{ content_for_layout }}
+      </main>
+
+      <footer>
+        {% sections 'footer-group' %}
+      </footer>
+    </div>
+
+    {% render 'mobile-navigation-bar' %}
+
+    {% render 'cart-drawer', render_wrapper: true %}
+    {% render 'theme-drawer' %}
+
+    {% render 'search-modal' %}
+
+    {% if settings.quick_add or settings.mobile_quick_add %}
+      {% render 'quick-add-modal' %}
+    {% endif %}
+  </body>
+</html>

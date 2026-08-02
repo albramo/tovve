@@ -1,0 +1,30 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */{
+  "sections": {
+    "main": {
+      "type": "tovee-page",
+      "settings": {
+        "show_banner": true,
+        "eyebrow": "Help Center",
+        "title": "Frequently Asked Questions",
+        "subtitle": "Everything you need to know about Tovee skincare.",
+        "content": "<h2>What is Tovee?</h2><p>Tovee is a premium skincare brand focused on plant-powered, clean formulas designed to nourish your skin and enhance your natural glow.</p><h2>Are Tovee products suitable for all skin types?</h2><p>Yes. Our formulas are crafted to be gentle and effective for most skin types. If you have specific concerns, we recommend patch testing before full use.</p><h2>Are your products cruelty-free?</h2><p>Absolutely. Tovee is committed to being cruelty-free. We never test on animals.</p><h2>How should I use Tovee products?</h2><p>Apply to clean, dry skin. Follow the instructions on each product label. For best results, use consistently as part of your daily skincare routine.</p><h2>Do you offer free shipping?</h2><p>Yes — we offer free shipping on all orders. Check our announcement bar for the latest offers.</p><h2>How can I contact Tovee?</h2><p>Visit our <a href=\"/pages/contact\">Contact page</a> and our team will be happy to help.</p>",
+        "button_label": "Contact Us",
+        "button_link": "shopify://pages/contact",
+        "background_color": "#FCFAF8",
+        "padding-block-start": 0,
+        "padding-block-end": 0
+      }
+    }
+  },
+  "order": [
+    "main"
+  ]
+}

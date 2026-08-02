@@ -1,0 +1,625 @@
+{%- liquid
+  assign current_product = closest.product
+  assign limit_count = 6
+  assign items_shown = 0
+  
+  # Accumulate products (prioritizing current product's collection, then filling with all products)
+  assign show_products_handles = ""
+  assign routine_collection = current_product.collections.first
+  if routine_collection != blank
+    for prod in routine_collection.products
+      if prod.id != current_product.id
+        assign show_products_handles = show_products_handles | append: prod.handle | append: ","
+      endif
+    endfor
+  endif
+  
+  assign handles_arr = show_products_handles | split: ","
+  if handles_arr.size < limit_count
+    for prod in collections.all.products
+      if prod.id != current_product.id
+        assign already_added = false
+        for h in handles_arr
+          if h == prod.handle
+            assign already_added = true
+            break
+          endif
+        endfor
+        unless already_added
+          assign show_products_handles = show_products_handles | append: prod.handle | append: ","
+          assign handles_arr = show_products_handles | split: ","
+        endunless
+      endif
+      if handles_arr.size >= limit_count
+        break
+      endif
+    endfor
+  endif
+-%}
+
+<div class="complete-routine" {{ block.shopify_attributes }}>
+  <h3 class="complete-routine__title">Complete Your Routine</h3>
+  
+  <div class="complete-routine__items">
+    {%- assign handles_arr = show_products_handles | split: "," -%}
+    {%- for handle in handles_arr -%}
+      {%- if handle == blank -%}{%- continue -%}{%- endif -%}
+      {%- assign prod = all_products[handle] -%}
+      {%- if prod == blank or prod.id == current_product.id -%}{%- continue -%}{%- endif -%}
+      
+      {%- if items_shown >= limit_count -%}
+        {%- break -%}
+      {%- endif -%}
+      
+      {%- assign items_shown = items_shown | plus: 1 -%}
+      {%- assign prod_variant = prod.selected_or_first_available_variant -%}
+      {%- assign product_form_id = 'product-form-routine-' | append: prod.id | append: '-' | append: block.id -%}
+
+      {%- liquid
+        assign discount_percent = 0
+        if prod_variant.compare_at_price > prod_variant.price
+          assign discount_percent = prod_variant.compare_at_price | minus: prod_variant.price | times: 100 | divided_by: prod_variant.compare_at_price
+        endif
+
+        assign can_add_to_cart = false
+        assign add_to_cart_text = 'products.product.sold_out' | t
+        if prod_variant.available
+          assign can_add_to_cart = true
+          assign add_to_cart_text = 'actions.add' | t
+        endif
+      -%}
+      
+      <div class="complete-routine__item">
+        <a href="{{ prod_variant.url }}" class="complete-routine__image-link">
+          {%- if discount_percent > 0 -%}
+            <span class="complete-routine__discount-badge">-{{ discount_percent }}%</span>
+          {%- endif -%}
+          {%- assign card_image = prod.featured_media.preview_image | default: prod.featured_image -%}
+          {%- if card_image != blank -%}
+            <img 
+              src="{{ card_image | image_url: width: 120 }}" 
+              alt="{{ prod.title | escape }}"
+              loading="lazy"
+              width="60"
+              height="60"
+            >
+          {%- else -%}
+            {{ 'product-1' | placeholder_svg_tag: 'complete-routine__placeholder' }}
+          {%- endif -%}
+        </a>
+        
+        <div class="complete-routine__info">
+          <a href="{{ prod_variant.url }}" class="complete-routine__item-title">{{ prod.title }}</a>
+          <div class="complete-routine__item-price">
+            {%- if discount_percent > 0 -%}
+              <span class="compare-price">{{ prod_variant.compare_at_price | money }}</span>
+            {%- endif -%}
+            <span class="current-price">{{ prod_variant.price | money }}</span>
+          </div>
+        </div>
+        
+        <div class="complete-routine__action">
+          <product-form-component
+            data-section-id="{{ section.id }}"
+            data-product-id="{{ prod.id }}"
+            data-product-url="{{ prod.url }}"
+            data-quantity-default="1"
+            on:submit="/handleSubmit"
+          >
+            <div class="visually-hidden" ref="liveRegion" role="status" aria-live="assertive" aria-atomic="true"></div>
+            {%- form 'product', prod, id: product_form_id, novalidate: 'novalidate', data-type: 'add-to-cart-form' -%}
+              <input type="hidden" name="id" ref="variantId" value="{{ prod_variant.id }}">
+              <div class="complete-routine__form-row">
+                <div class="complete-routine__qty">
+                  <button type="button" class="complete-routine__qty-btn" onclick="this.nextElementSibling.value=Math.max(1,+this.nextElementSibling.value-1)" aria-label="-">−</button>
+                  <input type="number" name="quantity" value="1" min="1" class="complete-routine__qty-input" aria-label="Quantity">
+                  <button type="button" class="complete-routine__qty-btn" onclick="this.previousElementSibling.value=+this.previousElementSibling.value+1" aria-label="+">+</button>
+                </div>
+                <div class="visually-hidden" ref="liveRegion" role="status" aria-live="assertive" aria-atomic="true"></div>
+                {% render 'add-to-cart-button',
+                  add_to_cart_text: add_to_cart_text,
+                  class: 'complete-routine__btn add-to-cart-button',
+                  can_add_to_cart: can_add_to_cart,
+                  product: prod
+                %}
+              </div>
+            {%- endform -%}
+          </product-form-component>
+        </div>
+      </div>
+    {%- endfor -%}
+  </div>
+
+  <div class="complete-routine__footer">
+    <button
+      type="button"
+      class="complete-routine__add-all-btn"
+      data-routine-id="{{ block.id }}"
+      onclick="completeRoutineAddAll(this)"
+    >
+      <span class="complete-routine__add-all-text">🛒 Add All to Cart</span>
+      <span class="complete-routine__add-all-loading" style="display:none;">Adding...</span>
+      <span class="complete-routine__add-all-done" style="display:none;">✓ Added!</span>
+    </button>
+  </div>
+</div>
+
+<script>
+function completeRoutineAddAll(btn) {
+  const routineId = btn.dataset.routineId;
+  const wrapper = btn.closest('.complete-routine');
+
+  // Collect all items: variant IDs + quantities from each form
+  const forms = wrapper.querySelectorAll('form[data-type="add-to-cart-form"]');
+  const items = [];
+  forms.forEach(function(form) {
+    const variantId = form.querySelector('input[name="id"]')?.value;
+    const quantity = parseInt(form.querySelector('input[name="quantity"]')?.value || '1', 10);
+    if (variantId) {
+      items.push({ variantId: String(variantId), quantity: quantity });
+    }
+  });
+
+  if (!items.length) return;
+
+  // Show loading
+  btn.disabled = true;
+  btn.querySelector('.complete-routine__add-all-text').style.display = 'none';
+  btn.querySelector('.complete-routine__add-all-loading').style.display = 'inline';
+  btn.querySelector('.complete-routine__add-all-done').style.display = 'none';
+
+  const formComponent = wrapper.querySelector('product-form-component');
+  if (formComponent && typeof formComponent.processBatch === 'function') {
+    formComponent.processBatch(items)
+      .then(function() {
+        // Show success
+        btn.querySelector('.complete-routine__add-all-loading').style.display = 'none';
+        btn.querySelector('.complete-routine__add-all-done').style.display = 'inline';
+        // Reset button after 2.5s
+        setTimeout(function() {
+          btn.disabled = false;
+          btn.querySelector('.complete-routine__add-all-done').style.display = 'none';
+          btn.querySelector('.complete-routine__add-all-text').style.display = 'inline';
+        }, 2500);
+      })
+      .catch(function(err) {
+        console.error(err);
+        btn.querySelector('.complete-routine__add-all-loading').style.display = 'none';
+        btn.querySelector('.complete-routine__add-all-text').style.display = 'inline';
+        btn.querySelector('.complete-routine__add-all-text').textContent = '⚠ Try Again';
+        btn.disabled = false;
+        setTimeout(function() {
+          btn.querySelector('.complete-routine__add-all-text').textContent = '🛒 Add All to Cart';
+        }, 2500);
+      });
+  } else {
+    // Fallback if component is not ready
+    fetch('/cart/add.js', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ items: items.map(item => ({ id: Number(item.variantId), quantity: item.quantity })) })
+    })
+    .then(function(res) {
+      if (!res.ok) throw new Error('Cart error');
+      return res.json();
+    })
+    .then(function() {
+      // Show success
+      btn.querySelector('.complete-routine__add-all-loading').style.display = 'none';
+      btn.querySelector('.complete-routine__add-all-done').style.display = 'inline';
+      // Update cart bubble count
+      fetch('/cart.js')
+        .then(r => r.json())
+        .then(cart => {
+          document.querySelectorAll('[data-cart-count]').forEach(el => el.textContent = cart.item_count);
+          document.dispatchEvent(new CustomEvent('cart:updated', { detail: { cart } }));
+        });
+      // Reset button after 2.5s
+      setTimeout(function() {
+        btn.disabled = false;
+        btn.querySelector('.complete-routine__add-all-done').style.display = 'none';
+        btn.querySelector('.complete-routine__add-all-text').style.display = 'inline';
+      }, 2500);
+    })
+    .catch(function() {
+      btn.querySelector('.complete-routine__add-all-loading').style.display = 'none';
+      btn.querySelector('.complete-routine__add-all-text').style.display = 'inline';
+      btn.querySelector('.complete-routine__add-all-text').textContent = '⚠ Try Again';
+      btn.disabled = false;
+      setTimeout(function() {
+        btn.querySelector('.complete-routine__add-all-text').textContent = '🛒 Add All to Cart';
+      }, 2500);
+    });
+  }
+}
+</script>
+
+{% stylesheet %}
+  .complete-routine {
+    margin-block: 24px;
+    padding: 16px;
+    background: var(--color-brand-off-white);
+    border-radius: 16px;
+    border: 1px solid var(--color-border-soft);
+  }
+
+  .complete-routine__title {
+    font-family: var(--font-heading--family);
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--color-brand-dark);
+    margin-top: 0;
+    margin-bottom: 14px;
+    letter-spacing: 0.01em;
+    border-bottom: 1px solid var(--color-border-soft);
+    padding-bottom: 8px;
+  }
+
+  .complete-routine__footer {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--color-border-soft);
+  }
+
+  .complete-routine__add-all-btn {
+    width: 100%;
+    padding: 11px 20px;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 1.5px solid #2e0808 !important;
+    border-radius: 30px;
+    font-family: var(--font-body--family);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .complete-routine__add-all-btn * {
+    color: #000000 !important;
+    fill: #000000 !important;
+  }
+
+  .complete-routine__add-all-btn:hover:not(:disabled) {
+    background: #2e0808 !important;
+    color: #ffffff !important;
+    border-color: #2e0808 !important;
+    transform: translateY(-1px);
+  }
+
+  .complete-routine__add-all-btn:hover:not(:disabled) * {
+    color: #ffffff !important;
+    fill: #ffffff !important;
+  }
+
+  .complete-routine__add-all-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .complete-routine__add-all-done {
+    color: var(--color-brand-dark, #2e0808);
+    font-weight: 700;
+  }
+
+  .complete-routine__items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .complete-routine__item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--color-brand-warm-white);
+    padding: 8px;
+    border-radius: 12px;
+    border: 1px solid var(--color-brand-light-pink);
+    transition: box-shadow 0.2s ease;
+  }
+
+  .complete-routine__item:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  }
+
+  .complete-routine__image-link {
+    position: relative;
+    flex-shrink: 0;
+    width: 54px;
+    height: 54px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--color-brand-off-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .complete-routine__discount-badge {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    z-index: 1;
+    background: #d9534f !important;
+    color: #ffffff !important;
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-family: var(--font-body--family);
+    font-size: 0.58rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+    pointer-events: none;
+  }
+
+  .complete-routine__image-link img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .complete-routine__info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .complete-routine__item-title {
+    font-family: var(--font-body--family);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-brand-dark);
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .complete-routine__item-title:hover {
+    color: var(--color-brand-mahogany);
+  }
+
+  .complete-routine__item-price {
+    font-family: var(--font-body--family);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .complete-routine__item-price .compare-price {
+    font-size: 0.72rem;
+    color: var(--color-text-light);
+    text-decoration: line-through;
+  }
+
+  .complete-routine__item-price .current-price {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--color-brand-dark);
+  }
+
+  .complete-routine__action {
+    flex-shrink: 0;
+  }
+
+  .complete-routine__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 32px;
+    padding: 6px 12px;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 1.5px solid #2e0808 !important;
+    border-radius: 30px;
+    font-family: var(--font-body--family);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease;
+    white-space: nowrap;
+  }
+
+  .complete-routine__btn * {
+    color: #000000 !important;
+    fill: #000000 !important;
+    stroke: #000000 !important;
+  }
+
+  .complete-routine__btn .add-to-cart-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .complete-routine__btn .add-to-cart-text {
+    gap: 4px;
+  }
+
+  .complete-routine__btn .add-to-cart-text__content span span {
+    padding: 0;
+  }
+
+  .complete-routine__btn .add-to-cart__added-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .complete-routine__btn:hover {
+    background: #2e0808 !important;
+    color: #ffffff !important;
+    border-color: #2e0808 !important;
+    transform: translateY(-1px);
+  }
+
+  .complete-routine__btn:hover * {
+    color: #ffffff !important;
+    fill: #ffffff !important;
+    stroke: #ffffff !important;
+  }
+
+  .complete-routine__btn:disabled {
+    background: var(--color-brand-light-pink);
+    color: var(--color-text-light);
+    cursor: not-allowed;
+  }
+
+  .complete-routine__action product-form-component,
+  .complete-routine__action add-to-cart-component {
+    margin: 0;
+    padding: 0;
+    display: block;
+  }
+
+  .complete-routine__action form {
+    margin: 0;
+    padding: 0;
+  }
+
+  .complete-routine__form-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Simple quantity control */
+  .complete-routine__qty {
+    display: flex;
+    align-items: center;
+    height: 36px;
+    border: 1.5px solid var(--color-border-soft, #e7dddd);
+    border-radius: 30px;
+    background: #fff;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .complete-routine__qty-btn {
+    width: 32px;
+    height: 100%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--color-brand-dark, #2e0808);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 1;
+    transition: background 0.15s;
+  }
+
+  .complete-routine__qty-btn:hover {
+    background: var(--color-brand-light-pink, #f7eded);
+  }
+
+  .complete-routine__qty-input {
+    width: 28px;
+    height: 100%;
+    text-align: center;
+    border: none;
+    background: transparent;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-brand-dark, #2e0808);
+    padding: 0;
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  .complete-routine__qty-input::-webkit-inner-spin-button,
+  .complete-routine__qty-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* Responsive Mobile styling for small screens to prevent overlap */
+  @media screen and (max-width: 550px) {
+    .complete-routine__item {
+      display: grid;
+      grid-template-columns: 54px 1fr;
+      grid-template-rows: auto auto;
+      gap: 10px 12px;
+      align-items: center;
+      padding: 12px;
+    }
+
+    .complete-routine__image-link {
+      grid-column: 1 / 2;
+      grid-row: 1 / 2;
+    }
+
+    .complete-routine__info {
+      grid-column: 2 / 3;
+      grid-row: 1 / 2;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .complete-routine__item-title {
+      white-space: normal; /* Wrap text on mobile if title is long */
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 0.8rem;
+      line-height: 1.3;
+    }
+
+    .complete-routine__action {
+      grid-column: 1 / 3;
+      grid-row: 2 / 3;
+      width: 100%;
+    }
+
+    .complete-routine__form-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: 8px;
+    }
+
+    .complete-routine__qty {
+      flex: 0 0 100px;
+      height: 34px;
+    }
+
+    .complete-routine__qty-btn {
+      width: 30px;
+    }
+
+    .complete-routine__btn {
+      flex: 1;
+      min-height: 34px;
+      height: 34px;
+      font-size: 0.72rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding-inline: 12px;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Complete Routine",
+  "tag": null,
+  "settings": []
+}
+{% endschema %}

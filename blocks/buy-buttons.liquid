@@ -1,0 +1,834 @@
+
+{% render 'theme-drawer-styles' %}
+{% liquid
+  assign block_settings = block.settings
+  assign product = closest.product
+  if request.visual_preview_mode and product == blank
+    assign product = collections.all.products.first
+  endif
+
+  # Fetch the dynamic percentage discount from product metafield or block settings fallback
+  assign discount_percent = nil
+  if product.metafields.custom.pack_discount.value != blank
+    assign discount_percent = product.metafields.custom.pack_discount.value
+  elsif product.metafields.custom.pack_discount != blank
+    assign discount_percent = product.metafields.custom.pack_discount
+  endif
+
+  if discount_percent == blank
+    assign discount_percent = block.settings.fallback_discount | default: block.settings.default_discount_percent | default: 10
+  endif
+  assign discount_percent = discount_percent | plus: 0
+
+  assign variant = closest.product.selected_or_first_available_variant
+  assign inventory_quantity = variant.inventory_quantity
+  assign inventory_policy = variant.inventory_policy
+
+  if variant.inventory_management == 'shopify'
+    assign inventory_managed = true
+  endif
+
+  assign can_add_to_cart = false
+  assign add_to_cart_text = 'products.product.unavailable' | t
+
+  if variant
+    if variant.quantity_rule.min > variant.inventory_quantity and inventory_managed and inventory_policy == 'deny'
+      assign quantity_rule_soldout = true
+    endif
+
+    if variant.available
+      assign can_add_to_cart = true
+      assign add_to_cart_text = 'products.product.add_to_cart' | t
+    elsif inventory_managed and inventory_quantity <= 0 and inventory_policy == 'deny' or quantity_rule_soldout
+      assign can_add_to_cart = false
+      assign add_to_cart_text = 'products.product.sold_out' | t
+    else
+      assign can_add_to_cart = false
+      assign add_to_cart_text = 'products.product.unavailable' | t
+    endif
+  endif
+%}
+
+<span
+  class="buy-buttons-block buy-buttons-block--{{ block.id }}"
+  {% if block_settings.text_color != blank %}
+    style="--color: {{ block_settings.text_color }}; --color-rgb: {{ block_settings.text_color.rgb  }}"
+  {% endif %}
+  {{ block.shopify_attributes }}
+>
+  {%- if product != blank -%}
+    {%- assign product_form_id = 'BuyButtons-ProductForm-' | append: section.id -%}
+    <product-form-component
+      data-section-id="{{ section.id }}"
+      data-product-id="{{ product.id }}"
+      data-product-url="{{ product.url }}"
+      on:submit="/handleSubmit"
+      data-quantity-default="{% if product.selected_or_first_available_variant.quantity_rule.min %}{{ product.selected_or_first_available_variant.quantity_rule.min }}{% else %}1{% endif %}"
+      data-quantity-error-max="{{ 'products.product.quantity_error_max' | t }}"
+    >
+      <div
+        class="visually-hidden"
+        aria-live="assertive"
+        role="status"
+        aria-atomic="true"
+        ref="liveRegion"
+      ></div>
+      {%- form 'product', product, id: product_form_id, data-type: 'add-to-cart-form' -%}
+        <input
+          type="hidden"
+          name="id"
+          ref="variantId"
+          value="{{ product.selected_or_first_available_variant.id }}"
+        >
+        {%- if block_settings.gift_card_form and product.gift_card? -%}
+          {%- render 'gift-card-recipient-form', product: product, form: form, section: section, block: block -%}
+          <span class="buy-buttons-block__bar">
+        {%- endif -%}
+        <div
+          class="product-form-buttons spacing-style{% if block_settings.stacking %} product-form-buttons--stacked{% endif %}"
+          style="{% render 'spacing-style', settings: block_settings %}"
+          ref="productFormButtons"
+        >
+          {%- unless block_settings.gift_card_form and product.gift_card? -%}
+            <span
+              class="product-form-text__error hidden"
+              ref="addToCartTextError"
+            >
+              <span class="svg-wrapper">
+                {{- 'icon-error.svg' | inline_asset_content -}}
+              </span>
+            </span>
+          {%- endunless -%}
+
+          {%- liquid
+            assign has_quantity_rules = false
+            if variant.quantity_rule.min > 1 or variant.quantity_rule.increment > 1 or variant.quantity_rule.max != null
+              assign has_quantity_rules = true
+            endif
+          -%}
+
+          {%- if has_quantity_rules -%}
+            {%- assign cart_quantity = cart | item_count_for_variant: variant.id -%}
+            <div
+              class="quantity-label"
+              ref="quantityLabel"
+            >
+              {{ 'products.product.quantity' | t }}
+              <span
+                class="quantity-label__cart-count{% if cart_quantity == 0 %} hidden{% endif %}"
+                ref="quantityLabelCartCount"
+                >({{ cart_quantity }}
+                {{ 'products.product.in_cart' | t }})</span
+              >
+            </div>
+          {%- endif -%}
+
+          {% content_for 'block', type: 'quantity', id: 'quantity' %}
+
+          {%- if has_quantity_rules -%}
+            <div
+              class="quantity-rules"
+              ref="quantityRules"
+            >
+              {%- if variant.quantity_rule.increment > 1 -%}
+                <span class="quantity-rules__item">
+                  {{ 'products.product.quantity_increments' | t: increment: variant.quantity_rule.increment }}
+                </span>
+              {%- endif -%}
+              {%- if variant.quantity_rule.min > 1 -%}
+                <span class="quantity-rules__item">
+                  {{ 'products.product.quantity_minimum' | t: minimum: variant.quantity_rule.min }}
+                </span>
+              {%- endif -%}
+              {%- if variant.quantity_rule.max != null -%}
+                <span class="quantity-rules__item">
+                  {{ 'products.product.quantity_maximum' | t: maximum: variant.quantity_rule.max }}
+                </span>
+              {%- endif -%}
+            </div>
+          {%- endif -%}
+
+          {%- if product.quantity_price_breaks_configured? and variant.quantity_price_breaks.size > 0 -%}
+            {%- liquid
+              assign use_currency = settings.currency_code_enabled_product_pages
+            -%}
+            <volume-pricing
+              class="volume-pricing"
+              data-section-id="{{ section.id }}"
+              ref="volumePricing"
+            >
+              <span class="volume-pricing__title">{{ 'content.volume_pricing' | t }}</span>
+              <div class="volume-pricing__table">
+                <div class="volume-pricing__row volume-pricing__row--even">
+                  <span>{{ variant.quantity_rule.min }}+</span>
+                  <span>
+                    {%- if use_currency -%}
+                      {{- variant.price | money_with_currency | strip -}}
+                    {%- else -%}
+                      {{- variant.price | money | strip -}}
+                    {%- endif -%}
+                    /{{ 'content.each_abbreviation' | t -}}
+                  </span>
+                </div>
+                {%- for price_break in variant.quantity_price_breaks limit: 2 -%}
+                  {%- liquid
+                    assign row_index = forloop.index
+                    if row_index == 1
+                      assign row_class = 'volume-pricing__row volume-pricing__row--odd'
+                    else
+                      assign row_class = 'volume-pricing__row volume-pricing__row--even'
+                    endif
+                  -%}
+                  <div class="{{ row_class }}">
+                    <span>{{ price_break.minimum_quantity }}+</span>
+                    <span>
+                      {%- if use_currency -%}
+                        {{- price_break.price | money_with_currency | strip -}}
+                      {%- else -%}
+                        {{- price_break.price | money | strip -}}
+                      {%- endif -%}
+                      /{{ 'content.each_abbreviation' | t -}}
+                    </span>
+                  </div>
+                {%- endfor -%}
+
+                {%- if variant.quantity_price_breaks.size > 2 -%}
+                  <div class="volume-pricing__collapsible-wrapper">
+                    {%- for price_break in variant.quantity_price_breaks offset: 2 -%}
+                      {%- liquid
+                        assign collapsed_index = forloop.index
+                        assign total_index = collapsed_index | plus: 2
+                        assign modulo_result = total_index | modulo: 2
+                        if modulo_result == 1
+                          assign row_class = 'volume-pricing__row volume-pricing__row--odd'
+                        else
+                          assign row_class = 'volume-pricing__row volume-pricing__row--even'
+                        endif
+                      -%}
+                      <div class="{{ row_class }}">
+                        <span>{{ price_break.minimum_quantity }}+</span>
+                        <span>
+                          {%- if use_currency -%}
+                            {{- price_break.price | money_with_currency | strip -}}
+                          {%- else -%}
+                            {{- price_break.price | money | strip -}}
+                          {%- endif -%}
+                          /{{ 'content.each_abbreviation' | t -}}
+                        </span>
+                      </div>
+                    {%- endfor -%}
+                  </div>
+
+                  <button
+                    type="button"
+                    class="volume-pricing__toggle button-unstyled"
+                    ref="volumePricingToggle"
+                    on:click="/toggleExpanded"
+                  >
+                    <span class="volume-pricing__toggle-text">
+                      <span class="volume-pricing__show-more">+ {{ 'actions.show_more' | t }}</span>
+                      <span class="volume-pricing__show-less">- {{ 'actions.show_less' | t }}</span>
+                    </span>
+                  </button>
+                {%- endif -%}
+              </div>
+            </volume-pricing>
+          {%- endif -%}
+          {% content_for 'block',
+            type: 'add-to-cart',
+            id: 'add-to-cart',
+            can_add_to_cart: can_add_to_cart,
+            add_to_cart_text: add_to_cart_text
+          %}
+
+          {% content_for 'block',
+            type: 'accelerated-checkout',
+            id: 'accelerated-checkout',
+            can_add_to_cart: can_add_to_cart,
+            form_obj: form
+          %}
+        </div>
+        {%- if block_settings.gift_card_form and product.gift_card? -%}
+          </span>
+        {%- endif -%}
+      {%- endform -%}
+    </product-form-component>
+
+    {%- if block_settings.show_product_links -%}
+      {%- liquid
+        assign refund_dialog_id = 'refund-policy-dialog-' | append: block.id
+        assign contact_url = block_settings.contact_page_url | default: '/pages/contact'
+        assign refund_policy_url = block_settings.refund_policy_url | default: '/policies/refund-policy'
+        assign returns_link_text = block_settings.returns_link_text | default: 'Returns & Exchanges'
+        assign help_link_text = block_settings.help_link_text | default: 'Need help?'
+      -%}
+
+      <script
+        src="{{ 'dialog.js' | asset_url }}"
+        type="module"
+      ></script>
+
+      <dialog-component
+        id="{{ refund_dialog_id }}"
+        class="buy-buttons-block__policy-dialog"
+      >
+        <div class="buy-buttons-block__links">
+          <button
+            type="button"
+            class="button-unstyled buy-buttons-block__link buy-buttons-block__link--policy"
+            on:click="/showDialog"
+          >
+            {{- returns_link_text -}}
+          </button>
+          <span
+            class="buy-buttons-block__links-divider"
+            aria-hidden="true"
+          >
+            ·
+          </span>
+          <a
+            href="{{ contact_url }}"
+            class="buy-buttons-block__link buy-buttons-block__link--help"
+          >
+            {{- help_link_text -}}
+          </a>
+        </div>
+
+        {%- comment -%}Social media share icons{%- endcomment -%}
+        <div class="buy-buttons-block__social-icons">
+          {%- assign share_url = shop.url | append: product.url | url_encode -%}
+          {%- assign share_title = product.title | url_encode -%}
+
+          <a
+            href="https://wa.me/?text={{ share_title }}%20{{ share_url }}"
+            class="buy-buttons-block__social-icon buy-buttons-block__social-icon--whatsapp"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Share on WhatsApp"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+          </a>
+
+          <a
+            href="https://www.facebook.com/sharer/sharer.php?u={{ share_url }}"
+            class="buy-buttons-block__social-icon buy-buttons-block__social-icon--facebook"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Share on Facebook"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+          </a>
+
+          <a
+            href="https://x.com/intent/tweet?text={{ share_title }}&url={{ share_url }}"
+            class="buy-buttons-block__social-icon buy-buttons-block__social-icon--x"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Share on X (Twitter)"
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+          </a>
+        </div>
+
+        <dialog
+          ref="dialog"
+          class="buy-buttons-block__policy-modal dialog-modal color-custom-popover"
+          scroll-lock
+          aria-labelledby="refund-policy-heading-{{ block.id }}"
+        >
+          <button
+            type="button"
+            ref="closeButton"
+            on:click="/closeDialog"
+            class="button button-unstyled close-button buy-buttons-block__policy-close"
+            aria-label="{{ 'accessibility.close_dialog' | t }}"
+          >
+            {{- 'icon-close.svg' | inline_asset_content -}}
+          </button>
+          <div class="buy-buttons-block__policy-content">
+            <h2
+              id="refund-policy-heading-{{ block.id }}"
+              class="buy-buttons-block__policy-heading h4"
+            >
+              {%- if shop.refund_policy.title != blank -%}
+                {{- shop.refund_policy.title -}}
+              {%- else -%}
+                {{- returns_link_text -}}
+              {%- endif -%}
+            </h2>
+            <div class="buy-buttons-block__policy-body rte">
+              {%- if shop.refund_policy.body != blank -%}
+                {{- shop.refund_policy.body -}}
+              {%- else -%}
+                <p>
+                  <a href="{{ refund_policy_url }}">{{ returns_link_text }}</a>
+                </p>
+              {%- endif -%}
+            </div>
+          </div>
+        </dialog>
+      </dialog-component>
+    {%- endif -%}
+  {%- else -%}
+    <div class="product-form-buttons">
+      <button
+        type="submit"
+        name="add"
+        class="button"
+        disabled
+      >
+        {{ 'blocks.sold_out' | t }}
+      </button>
+    </div>
+  {%- endif -%}
+</span>
+
+{% if block_settings.show_pickup_availability %}
+  <script
+    src="{{ 'local-pickup.js' | asset_url }}"
+    type="module"
+  ></script>
+
+  {%- assign pick_up_availabilities = closest.product.selected_or_first_available_variant.store_availabilities
+    | where: 'pick_up_enabled', true
+  -%}
+
+  <local-pickup
+    class="spacing-style product__pickup-availabilities"
+    {% if pick_up_availabilities.size == 0 %}
+      hidden
+    {% endif %}
+    data-section-id="{{ section.id }}"
+    data-product-url="{{ closest.product.url }}"
+    data-variant-id="{{ closest.product.selected_or_first_available_variant.id }}"
+    style="
+      {% render 'spacing-style', settings: block_settings %}
+      {% if block_settings.text_color != blank %}
+        --color: {{ block_settings.text_color }};
+        --color-rgb: {{ block_settings.text_color.rgb }}
+      {% endif %}
+    "
+    ref="localPickupButton"
+  >
+    {% if can_add_to_cart %}
+      <div class="pickup-availability__row">
+        <div class="pickup-availability__column">
+          <span class="svg-wrapper">
+            {% if pick_up_availabilities.first.available %}
+              {{- 'icon-available.svg' | inline_asset_content -}}
+            {% else %}
+              {{- 'icon-unavailable.svg' | inline_asset_content -}}
+            {% endif %}
+          </span>
+        </div>
+        <div class="pickup-availability__column">
+          {% if pick_up_availabilities.first.available %}
+            <p class="pickup-location__text-sm">
+              {{ 'content.pickup_available_at_html' | t: location: pick_up_availabilities.first.location.name }}
+            </p>
+            <p class="pickup-location__text-xs">
+              {{ 'content.pickup_ready_in' | t: pickup_time: pick_up_availabilities.first.pick_up_time }}
+            </p>
+          {% else %}
+            <p class="pickup-location__text-sm">
+              {{ 'content.pickup_not_available' | t }}
+            </p>
+          {% endif %}
+          <button
+            on:click="#pickup-drawer-{{ block.id }}/toggle"
+            class="button-unstyled pickup-location__button"
+          >
+            {{ 'actions.view_store_information' | t }}
+          </button>
+        </div>
+      </div>
+    {% endif %}
+  </local-pickup>
+
+  {% if can_add_to_cart %}
+    <theme-drawer
+      id="pickup-drawer-{{ block.id }}"
+      class="pickup-drawer"
+      data-skip-node-update
+      no-persist
+    >
+      <dialog
+        ref="panel"
+        class="theme-drawer__dialog color-custom-drawer"
+        aria-labelledby="pickup-dialog-heading-{{ block.id }}"
+        data-testid="pickup-location-dialog"
+      >
+        <h2
+          id="pickup-dialog-heading-{{ block.id }}"
+          class="visually-hidden"
+        >
+          {{ 'actions.view_store_information' | t }}
+        </h2>
+        <div class="theme-drawer__header pickup-availability__header-container">
+          <div class="pickup-availability__column">
+            <h4 class="pickup-location__h4">{{ closest.product.title }}</h4>
+            {% unless closest.product.has_only_default_variant %}
+              <p class="pickup-location__text-sm">
+                {{ closest.product.selected_or_first_available_variant.title }}
+              </p>
+            {% endunless %}
+          </div>
+          <button
+            on:click="#pickup-drawer-{{ block.id }}/close"
+            class="theme-drawer__close-button"
+            type="button"
+            aria-label="{{ 'actions.close' | t }}"
+          >
+            <span class="svg-wrapper">
+              {{- 'icon-close.svg' | inline_asset_content -}}
+            </span>
+          </button>
+        </div>
+        {% for pick_up_availability in pick_up_availabilities %}
+          <div class="pickup-location__wrapper">
+            <p class="pickup-location__text-bold">{{ pick_up_availability.location.name }}</p>
+            <div class="pickup-location__address-wrapper">
+              <span class="pickup-location__availability-wrapper">
+                {% if pick_up_availability.available %}
+                  {{- 'icon-available.svg' | inline_asset_content -}}
+                  {% assign pickup_time = pick_up_availability.pick_up_time | downcase %}
+                  {{ 'content.pickup_available_in' | t: pickup_time: pickup_time }}
+                {% else %}
+                  {{- 'icon-unavailable.svg' | inline_asset_content -}}
+                  {{ 'content.pickup_not_available' | t }}
+                {% endif %}
+              </span>
+              <address class="pickup-location__address">
+                {{ pick_up_availability.location.address | format_address }}
+                {{ pick_up_availability.location.address.phone }}
+              </address>
+            </div>
+          </div>
+        {% endfor %}
+      </dialog>
+    </theme-drawer>
+  {% endif %}
+{% endif %}
+
+{% render 'buy-buttons-styles' %}
+
+{% schema %}
+{
+  "name": "t:names.product_buy_buttons",
+  "tag": null,
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "stacking",
+      "label": "t:settings.always_stack_buttons",
+      "default": false
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "t:settings.text_color",
+      "placeholder": "t:settings.default"
+    },
+    {
+      "type": "header",
+      "content": "t:content.local_pickup"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_pickup_availability",
+      "label": "t:settings.show_pickup_availability",
+      "default": true
+    },
+    {
+      "type": "paragraph",
+      "content": "t:content.local_pickup_description"
+    },
+    {
+      "type": "header",
+      "content": "t:content.gift_card_products"
+    },
+    {
+      "type": "checkbox",
+      "id": "gift_card_form",
+      "label": "t:settings.gift_card_form",
+      "default": true
+    },
+    {
+      "type": "paragraph",
+      "content": "t:content.gift_card_form_description"
+    },
+    {
+      "type": "select",
+      "id": "recipient_button_style",
+      "label": "t:settings.button_style",
+      "options": [
+        {
+          "value": "default",
+          "label": "t:options.default"
+        },
+        {
+          "value": "custom",
+          "label": "t:options.custom"
+        }
+      ],
+      "default": "default",
+      "visible_if": "{{ block.settings.gift_card_form }}"
+    },
+    {
+      "type": "color",
+      "id": "recipient_button_background",
+      "label": "t:settings.background",
+      "default": "{{ settings.color_palette.background }}",
+      "alpha": true,
+      "visible_if": "{{ block.settings.gift_card_form and block.settings.recipient_button_style == \"custom\" }}"
+    },
+    {
+      "type": "color",
+      "id": "recipient_button_text",
+      "label": "t:settings.text",
+      "default": "{{ settings.color_palette.foreground }}",
+      "alpha": true,
+      "visible_if": "{{ block.settings.gift_card_form and block.settings.recipient_button_style == \"custom\" }}"
+    },
+    {
+      "type": "color",
+      "id": "recipient_button_border",
+      "label": "t:settings.borders",
+      "default": "{{ settings.color_palette.foreground }}",
+      "alpha": true,
+      "visible_if": "{{ block.settings.gift_card_form and block.settings.recipient_button_style == \"custom\" }}"
+    },
+    {
+      "type": "select",
+      "id": "selected_recipient_button_style",
+      "label": "t:settings.selected_button_style",
+      "options": [
+        {
+          "value": "default",
+          "label": "t:options.default"
+        },
+        {
+          "value": "custom",
+          "label": "t:options.custom"
+        }
+      ],
+      "default": "default",
+      "visible_if": "{{ block.settings.gift_card_form }}"
+    },
+    {
+      "type": "color",
+      "id": "selected_recipient_button_background",
+      "label": "t:settings.background",
+      "default": "{{ settings.color_palette.foreground }}",
+      "alpha": true,
+      "visible_if": "{{ block.settings.gift_card_form and block.settings.selected_recipient_button_style == \"custom\" }}"
+    },
+    {
+      "type": "color",
+      "id": "selected_recipient_button_text",
+      "label": "t:settings.text",
+      "default": "{{ settings.color_palette.background }}",
+      "alpha": true,
+      "visible_if": "{{ block.settings.gift_card_form and block.settings.selected_recipient_button_style == \"custom\" }}"
+    },
+    {
+      "type": "color",
+      "id": "selected_recipient_button_border",
+      "label": "t:settings.borders",
+      "default": "{{ settings.color_palette.foreground }}",
+      "alpha": true,
+      "visible_if": "{{ block.settings.gift_card_form and block.settings.selected_recipient_button_style == \"custom\" }}"
+    },
+    {
+      "type": "select",
+      "id": "input_style",
+      "label": "t:settings.input_style",
+      "options": [
+        {
+          "value": "default",
+          "label": "t:options.input_field"
+        },
+        {
+          "value": "custom",
+          "label": "t:options.custom"
+        }
+      ],
+      "default": "default",
+      "info": "t:info.edit_input_field_in_theme_settings",
+      "visible_if": "{{ block.settings.gift_card_form }}"
+    },
+    {
+      "type": "color",
+      "id": "input_background_color",
+      "label": "t:settings.background",
+      "default": "{{ settings.color_palette.background }}",
+      "visible_if": "{{ block.settings.gift_card_form and block.settings.input_style == \"custom\" }}"
+    },
+    {
+      "type": "color",
+      "id": "input_text_color",
+      "label": "t:settings.text",
+      "default": "{{ settings.color_palette.foreground }}",
+      "visible_if": "{{ block.settings.gift_card_form and block.settings.input_style == \"custom\" }}"
+    },
+    {
+      "type": "color",
+      "id": "input_border_color",
+      "label": "t:settings.borders",
+      "default": "{{ settings.color_palette.foreground }}",
+      "visible_if": "{{ block.settings.gift_card_form and block.settings.input_style == \"custom\" }}"
+    },
+    {
+      "type": "range",
+      "id": "border_width",
+      "label": "t:settings.border_width",
+      "min": 0,
+      "max": 4,
+      "step": 0.5,
+      "unit": "px",
+      "default": 1,
+      "visible_if": "{{ block.settings.gift_card_form and block.settings.input_style == \"custom\" }}"
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "t:settings.border_radius",
+      "min": 0,
+      "max": 50,
+      "step": 1,
+      "unit": "px",
+      "default": 0,
+      "visible_if": "{{ block.settings.gift_card_form and block.settings.input_style == \"custom\" }}"
+    },
+    {
+      "type": "header",
+      "content": "Product links"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_product_links",
+      "label": "Show returns and help links",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "returns_link_text",
+      "label": "Returns link text",
+      "default": "Returns & Exchanges",
+      "visible_if": "{{ block.settings.show_product_links }}"
+    },
+    {
+      "type": "text",
+      "id": "help_link_text",
+      "label": "Help link text",
+      "default": "Need help?",
+      "visible_if": "{{ block.settings.show_product_links }}"
+    },
+    {
+      "type": "url",
+      "id": "contact_page_url",
+      "label": "Contact page",
+      "visible_if": "{{ block.settings.show_product_links }}"
+    },
+    {
+      "type": "url",
+      "id": "refund_policy_url",
+      "label": "Refund policy fallback URL",
+      "visible_if": "{{ block.settings.show_product_links }}"
+    },
+    {
+      "type": "header",
+      "content": "t:content.padding"
+    },
+    {
+      "type": "range",
+      "id": "padding-block-start",
+      "label": "t:settings.top",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-block-end",
+      "label": "t:settings.bottom",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-start",
+      "label": "t:settings.left",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-end",
+      "label": "t:settings.right",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "fallback_discount",
+      "label": "Fallback Discount Percentage (%)",
+      "min": 1,
+      "max": 99,
+      "step": 1,
+      "default": 10,
+      "info": "Used if the product's metafield 'custom.pack_discount' is not configured."
+    },
+    {
+      "type": "range",
+      "id": "default_discount_percent",
+      "label": "Default Fallback Discount Percentage (%)",
+      "min": 1,
+      "max": 99,
+      "step": 1,
+      "default": 10,
+      "info": "Used if fallback_discount is empty."
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:names.product_buy_buttons",
+      "category": "t:categories.product",
+      "blocks": {
+        "quantity": {
+          "type": "quantity",
+          "static": true
+        },
+        "add-to-cart": {
+          "type": "add-to-cart",
+          "static": true,
+          "settings": {
+            "style_class": "button-secondary"
+          }
+        },
+        "accelerated-checkout": {
+          "type": "accelerated-checkout",
+          "static": true
+        }
+      }
+    }
+  ]
+}
+{% endschema %}

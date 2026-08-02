@@ -1,0 +1,112 @@
+{%- if settings.free_shipping_threshold != blank -%}
+  {%- liquid
+    assign threshold = settings.free_shipping_threshold | plus: 0
+    assign threshold_cents = threshold | times: 100
+    assign cart_total = cart.total_price
+  -%}
+  {%- if threshold > 0 -%}
+    {%- liquid
+      assign remaining_cents = threshold_cents | minus: cart_total
+      assign progress_percentage = cart_total | times: 100 | divided_by: threshold_cents
+      if progress_percentage > 100
+        assign progress_percentage = 100
+      endif
+    -%}
+    <free-shipping-bar class="free-shipping-bar-container" data-percent="{{ progress_percentage }}" data-total="{{ cart.total_price }}">
+      <div class="free-shipping-bar__info">
+        <span class="free-shipping-bar__icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-truck">
+            <rect x="1" y="3" width="15" height="13"></rect>
+            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+            <circle cx="5.5" cy="18.5" r="2.5"></circle>
+            <circle cx="18.5" cy="18.5" r="2.5"></circle>
+          </svg>
+        </span>
+        <span class="free-shipping-bar__text cart-primary-typography">
+          {%- if remaining_cents > 0 -%}
+            {%- assign remaining_money = remaining_cents | money -%}
+            {{ settings.free_shipping_message | replace: '[amount]', remaining_money }}
+          {%- else -%}
+            {{ settings.free_shipping_success_message }}
+          {%- endif -%}
+        </span>
+      </div>
+      <div class="free-shipping-bar__progress-wrapper">
+        <div class="free-shipping-bar__progress-bar" style="width: {{ progress_percentage }}%;"></div>
+      </div>
+    </free-shipping-bar>
+
+    <script>
+      class FreeShippingBar extends HTMLElement {
+        connectedCallback() {}
+      }
+      if (!customElements.get('free-shipping-bar')) {
+        customElements.define('free-shipping-bar', FreeShippingBar);
+      }
+    </script>
+
+    <style>
+      free-shipping-bar.free-shipping-bar-container {
+        display: flex;
+        flex-direction: column;
+        gap: var(--gap-sm);
+        width: 100%;
+        box-sizing: border-box;
+      }
+      
+      /* Drawer styles */
+      #cart-drawer free-shipping-bar.free-shipping-bar-container {
+        padding: var(--padding-md) var(--cart-drawer-padding);
+        background-color: var(--color-background);
+        border-bottom: 1px solid rgb(var(--color-foreground-rgb) / var(--opacity-10-25));
+      }
+      
+      /* Cart Page styles */
+      .cart-page__shipping-bar free-shipping-bar.free-shipping-bar-container {
+        padding: var(--padding-lg);
+        background-color: var(--color-input-background);
+        border: var(--style-border-width) solid rgb(var(--color-foreground-rgb) / var(--opacity-10-25));
+        border-radius: var(--style-border-radius-inputs, 8px);
+      }
+
+      .free-shipping-bar__info {
+        display: flex;
+        align-items: center;
+        gap: var(--gap-sm);
+        font-size: var(--font-size--sm);
+        font-weight: 500;
+        color: var(--color-foreground);
+      }
+      .free-shipping-bar__icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: var(--icon-size-md);
+        height: var(--icon-size-md);
+        color: var(--color-foreground);
+        flex-shrink: 0;
+      }
+      .free-shipping-bar__icon svg {
+        width: 100%;
+        height: 100%;
+      }
+      .free-shipping-bar__progress-wrapper {
+        width: 100%;
+        height: 8px;
+        background-color: rgb(var(--color-foreground-rgb) / var(--opacity-10-25));
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+      }
+      .free-shipping-bar__progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, var(--color-foreground) 0%, rgb(var(--color-foreground-rgb) / 0.8) 100%);
+        border-radius: 4px;
+        transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      free-shipping-bar.free-shipping-bar-container[data-percent="100"] .free-shipping-bar__progress-bar {
+        background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+      }
+    </style>
+  {%- endif -%}
+{%- endif -%}

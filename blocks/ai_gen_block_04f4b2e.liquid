@@ -1,0 +1,261 @@
+{% doc %}
+  @prompt
+    Create a breadcrumb navigation bar to be placed above the product media/images section on the product page. The breadcrumb should show: Home > Collection/Category Name > Product Title. Style it to look clean and professional like international e-commerce websites (like Amazon, ASOS, Zara). Use small, elegant text with ">" or "/" separators, and make the links clickable. The current collection and product name should be pulled dynamically from the page context.
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-breadcrumb-{{ ai_gen_id }} {
+    display: block;
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    padding: {{ block.settings.vertical_padding }}px 0;
+  }
+
+  .ai-breadcrumb-nav-{{ ai_gen_id }} {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: {{ block.settings.item_spacing }}px;
+    font-size: {{ block.settings.font_size }}px;
+    line-height: 1.4;
+    color: {{ block.settings.text_color }};
+  }
+
+  .ai-breadcrumb-item-{{ ai_gen_id }} {
+    display: flex;
+    align-items: center;
+    gap: {{ block.settings.item_spacing }}px;
+  }
+
+  .ai-breadcrumb-link-{{ ai_gen_id }} {
+    color: {{ block.settings.link_color }};
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .ai-breadcrumb-link-{{ ai_gen_id }}:hover {
+    color: {{ block.settings.link_hover_color }};
+    text-decoration: {{ block.settings.hover_underline }};
+  }
+
+  .ai-breadcrumb-separator-{{ ai_gen_id }} {
+    color: {{ block.settings.separator_color }};
+    user-select: none;
+  }
+
+  .ai-breadcrumb-current-{{ ai_gen_id }} {
+    color: {{ block.settings.current_color }};
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-breadcrumb-nav-{{ ai_gen_id }} {
+      font-size: {{ block.settings.font_size | times: 0.9 }}px;
+    }
+  }
+{% endstyle %}
+
+<breadcrumb-navigation-{{ ai_gen_id }}
+  class="ai-breadcrumb-{{ ai_gen_id }}"
+  {{ block.shopify_attributes }}
+>
+  <nav
+    class="ai-breadcrumb-nav-{{ ai_gen_id }}"
+    aria-label="Breadcrumb"
+  >
+    <div class="ai-breadcrumb-item-{{ ai_gen_id }}">
+      <a
+        href="{{ routes.root_url }}"
+        class="ai-breadcrumb-link-{{ ai_gen_id }}"
+      >
+        {{ block.settings.home_text }}
+      </a>
+      <span
+        class="ai-breadcrumb-separator-{{ ai_gen_id }}"
+        aria-hidden="true"
+      >
+        {{ block.settings.separator }}
+      </span>
+    </div>
+
+    {% if collection %}
+      <div class="ai-breadcrumb-item-{{ ai_gen_id }}">
+        <a
+          href="{{ collection.url }}"
+          class="ai-breadcrumb-link-{{ ai_gen_id }}"
+        >
+          {{ collection.title }}
+        </a>
+        <span
+          class="ai-breadcrumb-separator-{{ ai_gen_id }}"
+          aria-hidden="true"
+        >
+          {{ block.settings.separator }}
+        </span>
+      </div>
+    {% endif %}
+
+    <div class="ai-breadcrumb-item-{{ ai_gen_id }}">
+      <span class="ai-breadcrumb-current-{{ ai_gen_id }}">
+        {{ product.title }}
+      </span>
+    </div>
+  </nav>
+</breadcrumb-navigation-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class BreadcrumbNavigation{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+      }
+
+      connectedCallback() {
+        this.style.display = 'block';
+      }
+    }
+
+    customElements.define('breadcrumb-navigation-{{ ai_gen_id }}', BreadcrumbNavigation{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Breadcrumb navigation",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Content"
+    },
+    {
+      "type": "text",
+      "id": "home_text",
+      "label": "Home text",
+      "default": "Home"
+    },
+    {
+      "type": "select",
+      "id": "separator",
+      "label": "Separator",
+      "options": [
+        {
+          "value": ">",
+          "label": ">"
+        },
+        {
+          "value": "/",
+          "label": "/"
+        },
+        {
+          "value": "›",
+          "label": "›"
+        },
+        {
+          "value": "→",
+          "label": "→"
+        }
+      ],
+      "default": ">"
+    },
+    {
+      "type": "header",
+      "content": "Style"
+    },
+    {
+      "type": "range",
+      "id": "font_size",
+      "label": "Font size",
+      "min": 10,
+      "max": 18,
+      "step": 1,
+      "unit": "px",
+      "default": 13
+    },
+    {
+      "type": "range",
+      "id": "item_spacing",
+      "label": "Item spacing",
+      "min": 4,
+      "max": 16,
+      "step": 2,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "vertical_padding",
+      "label": "Vertical padding",
+      "min": 0,
+      "max": 40,
+      "step": 4,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text",
+      "default": "#4A3A3A"
+    },
+    {
+      "type": "color",
+      "id": "link_color",
+      "label": "Link",
+      "default": "#4A3A3A"
+    },
+    {
+      "type": "color",
+      "id": "link_hover_color",
+      "label": "Link hover",
+      "default": "#2E0808"
+    },
+    {
+      "type": "color",
+      "id": "current_color",
+      "label": "Current page",
+      "default": "#2E0808"
+    },
+    {
+      "type": "color",
+      "id": "separator_color",
+      "label": "Separator",
+      "default": "#E7DDDD"
+    },
+    {
+      "type": "select",
+      "id": "hover_underline",
+      "label": "Hover underline",
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "underline",
+          "label": "Underline"
+        }
+      ],
+      "default": "none"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Breadcrumb navigation"
+    }
+  ]
+}
+{% endschema %}

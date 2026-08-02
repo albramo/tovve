@@ -1,0 +1,30 @@
+{% comment %}
+  Renders a product card skeleton with shimmering effects to prevent layout shift.
+{% endcomment %}
+
+<div class="product-card-skeleton-wrapper">
+  <div class="product-card-skeleton">
+    <!-- Image Box -->
+    <div class="product-card-skeleton__media-wrapper">
+      <div class="product-card-skeleton__media skeleton-shimmer"></div>
+    </div>
+
+    <!-- Info Panel -->
+    <div class="product-card-skeleton__info">
+      <!-- Title Lines -->
+      <div class="product-card-skeleton__title-line skeleton-shimmer"></div>
+      <div class="product-card-skeleton__title-line-short skeleton-shimmer"></div>
+
+      <!-- Price Line -->
+      <div class="product-card-skeleton__price-line skeleton-shimmer"></div>
+
+      <!-- Actions Row (Quantity Stepper and Button) -->
+      <div class="product-card-skeleton__actions">
+        <!-- Quantity Selector Skeleton -->
+        <div class="product-card-skeleton__qty-selector skeleton-shimmer"></div>
+        <!-- Buy Button Skeleton -->
+        <div class="product-card-skeleton__buy-btn skeleton-shimmer"></div>
+      </div>
+    </div>
+  </div>
+</div>

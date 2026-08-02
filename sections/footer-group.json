@@ -1,0 +1,79 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "type": "footer",
+  "name": "Footer",
+  "sections": {
+    "tovee_footer_main": {
+      "type": "tovee-footer",
+      "blocks": {
+        "brand_info_AMeTrW": {
+          "type": "brand_info",
+          "settings": {
+            "logo_width": 210,
+            "tagline": "Follow us for skincare tips, beauty inspiration, and exclusive offers",
+            "instagram_url": "https://www.instagram.com/tovee.cosmetics",
+            "tiktok_url": "https://www.tiktok.com/@tovee.cosmetics",
+            "facebook_url": "https://www.facebook.com/toveecosmetics",
+            "youtube_url": "",
+            "whatsapp_url": "https://wa.me/201023658931"
+          }
+        },
+        "nav_shop": {
+          "type": "nav_column",
+          "settings": {
+            "title": "Shop",
+            "menu": "shope"
+          }
+        },
+        "nav_support": {
+          "type": "nav_column",
+          "settings": {
+            "title": "Customer Service",
+            "menu": "footer"
+          }
+        },
+        "nav_policies": {
+          "type": "policies_column",
+          "settings": {
+            "title": "Policies",
+            "show_privacy": true,
+            "show_terms": true,
+            "show_shipping": true,
+            "show_contact": true,
+            "show_refund": true
+          }
+        },
+        "newsletter_DLVV9x": {
+          "type": "newsletter",
+          "settings": {
+            "title": "Stay in the Glow",
+            "text": "Exclusive rituals, new arrivals & skincare secrets — straight to your inbox.",
+            "placeholder": "Your email address"
+          }
+        }
+      },
+      "block_order": [
+        "brand_info_AMeTrW",
+        "nav_shop",
+        "nav_support",
+        "nav_policies",
+        "newsletter_DLVV9x"
+      ],
+      "settings": {
+        "background_color": "#241c1c",
+        "copyright_owner": "Tovee Beauty"
+      }
+    }
+  },
+  "order": [
+    "tovee_footer_main"
+  ]
+}

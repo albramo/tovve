@@ -1,0 +1,219 @@
+{% doc %}
+  @prompt
+    Create a breadcrumb navigation block for a product page that displays the full path: Home > Collection Name > Product Name. The collection shown should be the first collection the product belongs to. Style it to look clean and minimal, matching a modern e-commerce store.
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-breadcrumb-{{ ai_gen_id }} {
+    display: block;
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    padding: {{ block.settings.padding_vertical }}px {{ block.settings.padding_horizontal }}px;
+  }
+
+  .ai-breadcrumb-nav-{{ ai_gen_id }} {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: {{ block.settings.spacing }}px;
+    font-size: {{ block.settings.font_size }}px;
+    color: {{ block.settings.text_color }};
+  }
+
+  .ai-breadcrumb-item-{{ ai_gen_id }} {
+    display: flex;
+    align-items: center;
+    gap: {{ block.settings.spacing }}px;
+  }
+
+  .ai-breadcrumb-link-{{ ai_gen_id }} {
+    color: {{ block.settings.link_color }};
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .ai-breadcrumb-link-{{ ai_gen_id }}:hover {
+    color: {{ block.settings.link_hover_color }};
+  }
+
+  .ai-breadcrumb-separator-{{ ai_gen_id }} {
+    color: {{ block.settings.separator_color }};
+    user-select: none;
+  }
+
+  .ai-breadcrumb-current-{{ ai_gen_id }} {
+    color: {{ block.settings.current_color }};
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-breadcrumb-nav-{{ ai_gen_id }} {
+      font-size: {{ block.settings.font_size | times: 0.9 }}px;
+    }
+  }
+{% endstyle %}
+
+<product-breadcrumb-{{ ai_gen_id }} class="ai-breadcrumb-{{ ai_gen_id }}" {{ block.shopify_attributes }}>
+  <nav class="ai-breadcrumb-nav-{{ ai_gen_id }}" aria-label="Breadcrumb">
+    <div class="ai-breadcrumb-item-{{ ai_gen_id }}">
+      <a href="{{ routes.root_url }}" class="ai-breadcrumb-link-{{ ai_gen_id }}">
+        {% if block.settings.home_text != blank %}
+          {{ block.settings.home_text }}
+        {% else %}
+          الرئيسية
+        {% endif %}
+      </a>
+      <span class="ai-breadcrumb-separator-{{ ai_gen_id }}" aria-hidden="true">{{ block.settings.separator }}</span>
+    </div>
+
+    {% if product %}
+      {% if product.collections.size > 0 %}
+        {% assign first_collection = product.collections.first %}
+        <div class="ai-breadcrumb-item-{{ ai_gen_id }}">
+          <a href="{{ first_collection.url }}" class="ai-breadcrumb-link-{{ ai_gen_id }}">
+            {{ first_collection.title }}
+          </a>
+          <span class="ai-breadcrumb-separator-{{ ai_gen_id }}" aria-hidden="true">{{ block.settings.separator }}</span>
+        </div>
+      {% endif %}
+
+      <div class="ai-breadcrumb-item-{{ ai_gen_id }}">
+        <span class="ai-breadcrumb-current-{{ ai_gen_id }}" aria-current="page">
+          {{ product.title }}
+        </span>
+      </div>
+    {% endif %}
+  </nav>
+</product-breadcrumb-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class ProductBreadcrumb{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+      }
+
+      connectedCallback() {
+      }
+    }
+
+    customElements.define('product-breadcrumb-{{ ai_gen_id }}', ProductBreadcrumb{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Product breadcrumb",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Content"
+    },
+    {
+      "type": "text",
+      "id": "home_text",
+      "label": "Home text",
+      "default": "Home"
+    },
+    {
+      "type": "text",
+      "id": "separator",
+      "label": "Separator",
+      "default": "›"
+    },
+    {
+      "type": "header",
+      "content": "Style"
+    },
+    {
+      "type": "range",
+      "id": "font_size",
+      "label": "Font size",
+      "min": 10,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "range",
+      "id": "spacing",
+      "label": "Spacing",
+      "min": 4,
+      "max": 20,
+      "step": 2,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "padding_vertical",
+      "label": "Vertical padding",
+      "min": 0,
+      "max": 40,
+      "step": 4,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "padding_horizontal",
+      "label": "Horizontal padding",
+      "min": 0,
+      "max": 40,
+      "step": 4,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text",
+      "default": "#4A3A3A"
+    },
+    {
+      "type": "color",
+      "id": "link_color",
+      "label": "Link",
+      "default": "#4A3A3A"
+    },
+    {
+      "type": "color",
+      "id": "link_hover_color",
+      "label": "Link hover",
+      "default": "#2E0808"
+    },
+    {
+      "type": "color",
+      "id": "current_color",
+      "label": "Current page",
+      "default": "#2E0808"
+    },
+    {
+      "type": "color",
+      "id": "separator_color",
+      "label": "Separator",
+      "default": "#E7DDDD"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Product breadcrumb"
+    }
+  ]
+}
+{% endschema %}

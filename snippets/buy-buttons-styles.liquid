@@ -1,0 +1,562 @@
+{%- doc -%}
+  Buy-buttons styles consolidated into a single snippet.
+
+  @example
+  {% render 'buy-buttons-styles' %}
+{%- enddoc -%}
+
+{% stylesheet %}
+  .buy-buttons-block {
+    --buy-button-preferred-width: 185px;
+
+    width: 100%;
+  }
+
+  .product-form-buttons {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .product-form-buttons:not(:has(.quantity-rules)) {
+    gap: calc(var(--gap-sm) / 2);
+
+    @media screen and (min-width: 750px) {
+      gap: var(--gap-sm);
+    }
+  }
+
+  .product-form-buttons
+    > *:not(.quantity-selector-wrapper, .quantity-rules, .quantity-label, .volume-pricing, .product-form-text__error) {
+    flex: 1 1 var(--buy-button-preferred-width, 0);
+    min-width: fit-content;
+  }
+
+  .product-form-buttons--stacked
+    > *:not(.quantity-selector-wrapper, .quantity-rules, .quantity-label, .volume-pricing, .product-form-text__error) {
+    flex-basis: 51%;
+  }
+
+  .product-form-buttons button {
+    width: 100%;
+    padding-block: var(--padding-lg);
+  }
+
+  .buy-buttons-block__link--policy {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: rgb(var(--color-foreground-rgb) / 0.8);
+    letter-spacing: 0.01em;
+  }
+
+  .buy-buttons-block__link--policy:hover {
+    color: var(--color-foreground);
+  }
+
+  .quantity-selector {
+    flex-grow: 0;
+    flex-shrink: 0;
+    height: var(--height-buy-buttons);
+  }
+
+  .quantity-label {
+    flex: 1 0 100%;
+    width: 100%;
+    font-size: var(--font-size--sm);
+    margin-block-end: var(--gap-xs);
+  }
+
+  .quantity-label__cart-count {
+    color: var(--color-foreground-secondary);
+  }
+
+  .quantity-rules {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    row-gap: calc(var(--gap-xs) / 2);
+    flex: 1 0 100%;
+    width: 100%;
+    font-size: var(--font-size--xs);
+    color: var(--color-foreground-secondary);
+    margin-block-start: var(--gap-xs);
+    margin-block-end: var(--gap);
+  }
+
+  .product-form-buttons:has(~ .volume-pricing .volume-pricing__title) .quantity-rules {
+    margin-block-end: var(--gap-md);
+  }
+
+  .quantity-rules__item {
+    position: relative;
+    display: inline-block;
+    color: rgb(var(--color-rgb, var(--color-foreground-rgb)) / var(--opacity-subdued-text));
+  }
+
+  .quantity-rules__item:not(:last-child) {
+    padding-right: var(--padding-xl);
+    margin-right: var(--margin-2xs);
+  }
+
+  .quantity-rules__item:not(:last-child)::after {
+    content: '•';
+    position: absolute;
+    inset-inline-end: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.5em;
+    line-height: 0;
+  }
+
+  .add-to-cart-button {
+    height: var(--height-buy-buttons);
+    text-transform: var(--button-text-case-primary);
+  }
+
+  .add-to-cart-button.button-secondary {
+    text-transform: var(--button-text-case-secondary);
+  }
+
+  .product-form-text__error {
+    display: flex;
+    flex: 1 0 100%;
+    align-items: flex-start;
+    gap: var(--gap-xs);
+    margin-block-end: var(--gap-xs);
+  }
+
+  .product__pickup-availabilities {
+    width: 100%;
+    color: var(--color, var(--color-foreground));
+  }
+
+  .pickup-availability__column {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  .pickup-availability__row {
+    display: flex;
+    gap: var(--padding-xs);
+  }
+
+  .pickup-availability__dialog-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .pickup-availability__header-container {
+    padding-block-end: var(--padding-2xl);
+  }
+
+  .pickup-location__wrapper {
+    display: flex;
+    flex-direction: column;
+    padding-block: var(--padding-2xl);
+    padding-inline: var(--theme-drawer-padding);
+    border-top: 1px solid var(--color-border);
+    gap: var(--padding-xs);
+  }
+
+  .pickup-location__address-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--padding-md);
+  }
+
+  .pickup-location__text-sm {
+    font-size: var(--font-size--sm);
+    margin: 0;
+  }
+
+  .pickup-location__text-xs {
+    font-size: var(--font-size--xs);
+    margin: 0;
+  }
+
+  .pickup-location__button {
+    width: fit-content;
+    color: var(--color, var(--color-foreground));
+    font-size: var(--font-size--xs);
+    font-family: var(--font-body--family);
+    padding: 0;
+    cursor: pointer;
+    margin-block: var(--margin-xs);
+  }
+
+  .pickup-location__button:hover {
+    color: rgb(var(--color-rgb, var(--color-foreground-rgb)) / var(--opacity-subdued-text));
+  }
+
+  .pickup-location__h4 {
+    margin: 0;
+  }
+
+  .pickup-location__text-bold {
+    font-size: var(--font-size--md);
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .pickup-location__availability-wrapper {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-xs);
+    font-family: var(--font-paragraph--family);
+  }
+
+  .pickup-location__address {
+    font-style: normal;
+  }
+
+  .volume-pricing {
+    display: block;
+    width: 100%;
+    margin-bottom: var(--gap);
+  }
+
+  .volume-pricing:not(:has(.volume-pricing__title)) {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  .volume-pricing__title {
+    display: block;
+    margin-block-end: var(--gap-sm);
+    font-size: var(--font-size--sm);
+    font-weight: var(--font-body--weight);
+    color: var(--color-foreground);
+  }
+
+  .volume-pricing__table {
+    width: 100%;
+  }
+
+  .volume-pricing__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-block: var(--padding-sm);
+    padding-inline: var(--padding-md);
+    font-size: var(--font-size--sm);
+  }
+
+  .volume-pricing__row--even {
+    background: rgb(var(--color-foreground-rgb) / var(--opacity-5));
+  }
+
+  .volume-pricing__row--odd {
+    background: var(--color-background);
+  }
+
+  .volume-pricing__collapsible-wrapper {
+    block-size: 0;
+    overflow-y: clip;
+    opacity: 0;
+    interpolate-size: allow-keywords;
+    transition: opacity var(--animation-speed-slow) var(--animation-easing),
+      block-size var(--animation-speed-slow) var(--animation-easing);
+  }
+
+  .volume-pricing__toggle {
+    width: 100%;
+    padding-bottom: 0;
+    padding-inline: 0;
+    text-align: left;
+    color: var(--color-foreground-secondary);
+    font-size: var(--font-size--xs);
+    cursor: default;
+    margin-block-start: 0;
+    pointer-events: none;
+  }
+
+  button.volume-pricing__toggle {
+    /* Need the extra specificity to override .product-form-buttons button */
+    padding-block: var(--padding-sm);
+  }
+
+  .volume-pricing__toggle-text {
+    cursor: pointer;
+    display: inline-block;
+    pointer-events: auto;
+  }
+
+  .volume-pricing__show-less {
+    display: none;
+  }
+
+  .volume-pricing--expanded .volume-pricing__collapsible-wrapper {
+    opacity: 1;
+    block-size: auto;
+
+    @starting-style {
+      block-size: 0;
+      opacity: 0;
+      overflow-y: clip;
+    }
+  }
+
+  .volume-pricing--expanded .volume-pricing__show-more {
+    display: none;
+  }
+
+  .volume-pricing--expanded .volume-pricing__show-less {
+    display: inline;
+  }
+
+  /* Accelerated checkout styles — co-located here so they compile on pages
+       where the quick-add modal can display buy buttons (e.g. collection pages). */
+  .accelerated-checkout-block[data-shopify-visual-preview] {
+    width: 300px;
+  }
+
+  more-payment-options-link {
+    font-size: smaller;
+  }
+
+  more-payment-options-link a:hover {
+    color: rgb(var(--color-rgb, var(--color-foreground-rgb)) / var(--opacity-subdued-text));
+  }
+
+  .shopify-payment-button__more-options[aria-hidden='true'] {
+    display: none;
+  }
+
+  /* Product page: white outline buttons, filled on hover */
+  .product-details .buy-buttons-block .product-form-buttons {
+    --product-btn-brand: var(--color-primary-button-background);
+    --product-btn-brand-hover: var(--color-primary-button-hover-background);
+    --product-btn-brand-text: var(--color-primary-button-hover-text);
+  }
+
+  /* Add to Cart: White background with burgundy border and black text, filled burgundy on hover */
+  .add-to-cart-button:is(.button, .button-secondary),
+  .buy-buttons-block .add-to-cart-button:is(.button, .button-secondary),
+  .cdr-routine__btn.add-to-cart-button {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-color: #2e0808 !important;
+    border-width: 1.5px !important;
+    border-style: solid !important;
+  }
+
+  /* Add to Cart default: icon + text = black */
+  .add-to-cart-button:is(.button, .button-secondary) *,
+  .buy-buttons-block .add-to-cart-button:is(.button, .button-secondary) *,
+  .cdr-routine__btn.add-to-cart-button * {
+    color: #000000 !important;
+    fill: #000000 !important;
+    stroke: #000000 !important;
+  }
+
+  /* Add to Cart hover: force burgundy bg and white text/icon on ALL inner elements (*) */
+  .add-to-cart-button:is(.button, .button-secondary):hover:not(:disabled),
+  .buy-buttons-block .add-to-cart-button:is(.button, .button-secondary):hover:not(:disabled),
+  .cdr-routine__btn.add-to-cart-button:hover:not(:disabled) {
+    background-color: #2e0808 !important;
+    color: #ffffff !important;
+    border-color: #2e0808 !important;
+  }
+
+  .add-to-cart-button:is(.button, .button-secondary):hover:not(:disabled) *,
+  .buy-buttons-block .add-to-cart-button:is(.button, .button-secondary):hover:not(:disabled) *,
+  .cdr-routine__btn.add-to-cart-button:hover:not(:disabled) * {
+    color: #ffffff !important;
+    fill: #ffffff !important;
+    stroke: #ffffff !important;
+  }
+
+  /* Buy Now (Shopify Payment Button): White background with burgundy border and black text, filled burgundy on hover */
+  button.shopify-payment-button__button--unbranded,
+  .buy-buttons-block .accelerated-checkout-block button.shopify-payment-button__button--unbranded {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-color: #2e0808 !important;
+    border-width: 1.5px !important;
+    border-style: solid !important;
+  }
+
+  button.shopify-payment-button__button--unbranded *,
+  .buy-buttons-block .accelerated-checkout-block button.shopify-payment-button__button--unbranded * {
+    color: #000000 !important;
+    fill: #000000 !important;
+  }
+
+  button.shopify-payment-button__button--unbranded:hover:not([disabled]),
+  .buy-buttons-block .accelerated-checkout-block button.shopify-payment-button__button--unbranded:hover:not([disabled]) {
+    background-color: #2e0808 !important;
+    color: #ffffff !important;
+    border-color: #2e0808 !important;
+  }
+
+  button.shopify-payment-button__button--unbranded:hover:not([disabled]) *,
+  .buy-buttons-block .accelerated-checkout-block button.shopify-payment-button__button--unbranded:hover:not([disabled]) * {
+    color: #ffffff !important;
+    fill: #ffffff !important;
+  }
+
+  /* Product page: quantity selector ~2x add-to-cart button scale */
+  .product-details .buy-buttons-block .quantity-selector {
+    --quantity-selector-width: calc(var(--height-buy-buttons) * 2.6);
+    --color-input-border: var(--color-brand-dark, var(--color-primary-button-hover-background, #2e0808));
+    flex: 0 0 var(--quantity-selector-width);
+    min-height: var(--height-buy-buttons);
+    border-color: var(--color-input-border);
+    border-width: 1.5px;
+  }
+
+  .product-details .buy-buttons-block .quantity-selector :is(.quantity-minus, .quantity-plus) {
+    width: calc(var(--minimum-touch-target) * 1.35);
+    height: calc(var(--minimum-touch-target) * 1.35);
+  }
+
+  .product-details .buy-buttons-block .quantity-selector input[type='number'] {
+    font-size: calc(var(--font-paragraph--size) * 1.125);
+    max-width: calc(var(--quantity-selector-width) - var(--minimum-touch-target) * 2.7);
+  }
+
+  .product-details .buy-buttons-block .quantity-selector svg {
+    width: var(--icon-size-sm);
+    height: var(--icon-size-sm);
+  }
+
+  .buy-buttons-block__links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-md);
+    width: 100%;
+    margin-block-start: calc(var(--padding-xl) * 1.5);
+    padding-block-start: var(--padding-md);
+  }
+
+  .buy-buttons-block__link {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-foreground);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    cursor: pointer;
+    padding: 0;
+    background: none;
+    border: none;
+    font-family: inherit;
+    line-height: 1.5;
+    transition: color var(--animation-speed) var(--animation-easing);
+  }
+
+  .buy-buttons-block__link:hover {
+    color: var(--color, var(--color-foreground));
+  }
+
+  .buy-buttons-block__links-divider {
+    color: rgb(var(--color-rgb, var(--color-foreground-rgb)) / var(--opacity-subdued-text));
+    opacity: 0.45;
+    user-select: none;
+  }
+
+  /* ── Social Media Icons ── */
+  .buy-buttons-block__social-icons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-block-start: 14px;
+    padding-block-start: 12px;
+    border-top: 1px solid rgb(var(--color-foreground-rgb) / 0.08);
+    width: 100%;
+  }
+
+  .buy-buttons-block__social-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1.5px solid rgb(var(--color-foreground-rgb) / 0.12);
+    color: rgb(var(--color-foreground-rgb) / 0.65);
+    background: transparent;
+    text-decoration: none;
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, transform 0.18s ease;
+    cursor: pointer;
+  }
+
+  .buy-buttons-block__social-icon:hover {
+    transform: translateY(-2px);
+    border-color: transparent;
+    color: #fff;
+  }
+
+  .buy-buttons-block__social-icon--whatsapp:hover {
+    background-color: #25D366;
+  }
+
+  .buy-buttons-block__social-icon--facebook:hover {
+    background-color: #1877F2;
+  }
+
+  .buy-buttons-block__social-icon--x:hover {
+    background-color: #000000;
+  }
+
+  .buy-buttons-block__social-icon svg {
+    display: block;
+    flex-shrink: 0;
+  }
+
+  .buy-buttons-block__policy-modal {
+    padding: var(--padding-4xl) var(--padding-xl) var(--padding-xl);
+    max-width: min(50rem, calc(100vw - var(--padding-2xl) * 2));
+    max-height: 90vh;
+    margin-top: 20vh;
+    border: var(--style-border-popover);
+    border-radius: var(--style-border-radius-popover);
+    background-color: var(--color-background);
+  }
+
+  .buy-buttons-block__policy-close {
+    top: var(--margin-sm);
+    right: var(--margin-sm);
+    opacity: 0.85;
+  }
+
+  @media screen and (max-width: 749px) {
+    .buy-buttons-block__policy-close {
+      width: 44px;
+      height: 44px;
+      top: var(--margin-md);
+      right: var(--margin-md);
+    }
+
+    .buy-buttons-block__policy-close .svg-wrapper {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  .buy-buttons-block__policy-heading {
+    margin-block: 0 var(--padding-md);
+    padding-inline-end: var(--padding-3xl);
+  }
+
+  .buy-buttons-block__policy-body {
+    font-size: var(--font-size--sm);
+    line-height: 1.6;
+    overflow-y: auto;
+    max-height: calc(85vh - 6rem);
+    color: var(--color-foreground);
+  }
+
+  .buy-buttons-block__policy-body :is(p, ul, ol) {
+    margin-block: 0 0.75em;
+  }
+
+  .buy-buttons-block__policy-body :is(p, ul, ol):last-child {
+    margin-block-end: 0;
+  }
+{% endstylesheet %}

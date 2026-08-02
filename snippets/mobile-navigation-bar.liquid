@@ -1,0 +1,150 @@
+<div class="mobile-navigation-bar">
+  <a href="/" class="mobile-nav__item">
+    <span class="svg-wrapper">
+      <svg aria-hidden="true" focusable="false" role="presentation" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+    </span>
+    <span class="mobile-nav__label">Home</span>
+  </a>
+
+  <button type="button" class="mobile-nav__item mobile-nav__cart" on:click="#cart-drawer/toggle">
+    <cart-icon class="mobile-nav__cart-icon{% unless cart == empty %} mobile-nav__cart-icon--has-cart{% endunless %}" data-testid="cart-icon">
+      <span class="svg-wrapper">
+        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2 3h2.5l1.8 8.5h9.2l1.5-6H5"/><circle cx="7" cy="15.5" r="1.2" fill="currentColor"/><circle cx="14" cy="15.5" r="1.2" fill="currentColor"/></svg>
+      </span>
+      {% render 'cart-bubble', limit: 100 %}
+    </cart-icon>
+    <span class="mobile-nav__label">Cart</span>
+  </button>
+
+  <button type="button" class="mobile-nav__item" on:click="#search-modal/showDialog">
+    <span class="svg-wrapper">
+      <svg aria-hidden="true" focusable="false" role="presentation" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </span>
+    <span class="mobile-nav__label">Search</span>
+  </button>
+</div>
+
+<style>
+  .mobile-navigation-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 56px;
+    background-color: #ffffff;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.03);
+    z-index: 99; /* Below cart drawer and modals, above normal content */
+    display: none; /* Hidden by default on desktop */
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 12px;
+  }
+
+  .mobile-nav__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    background: transparent;
+    border: none;
+    padding: 6px 0;
+    width: 30%;
+    color: #2e0808 !important;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+  }
+
+  .mobile-nav__item:hover, .mobile-nav__item:active {
+    opacity: 0.7;
+  }
+
+  .mobile-nav__item .svg-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-bottom: 2px;
+    color: #2e0808 !important;
+  }
+
+  .mobile-nav__item .svg-wrapper svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .mobile-nav__label {
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.2;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .mobile-nav__cart-icon {
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 20px !important;
+    height: 20px !important;
+    margin-bottom: 2px !important;
+  }
+
+  .mobile-nav__cart-icon .svg-wrapper {
+    width: 20px !important;
+    height: 20px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .mobile-nav__cart-icon svg {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .mobile-nav__cart-icon .cart-bubble {
+    position: absolute !important;
+    top: -6px !important;
+    right: -8px !important;
+    width: 16px !important;
+    height: 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 8px !important;
+    border-radius: 50% !important;
+    background-color: #2e0808 !important;
+    color: #ffffff !important;
+  }
+
+  .mobile-nav__cart-icon .cart-bubble__background {
+    display: none !important;
+  }
+
+  /* Show ONLY on mobile devices */
+  @media screen and (max-width: 749px) {
+    .mobile-navigation-bar {
+      display: flex !important;
+    }
+
+    /* We need to offset body padding so the absolute bottom elements don't cover footer content */
+    body {
+      padding-bottom: 56px !important;
+    }
+  }
+
+  /* Hide when cart or any other drawer is open */
+  html:has(theme-drawer[open]) .mobile-navigation-bar {
+    display: none !important;
+  }
+</style>

@@ -1,0 +1,643 @@
+{% comment %}
+  Section: Tovee Shop Page
+  Sidebar with all collections + product grid with local client-side filtering.
+  URL updates on category select (pushState / hash) and syncs on page refresh.
+  Uses the exact same product-card components used everywhere else in the store.
+{% endcomment %}
+
+<div
+  class="tovee-shop"
+  id="tovee-shop"
+  style="
+    --tovee-shop-bg: {{ section.settings.background_color }};
+    --tovee-shop-accent: {{ section.settings.accent_color }};
+    --tovee-shop-text: {{ section.settings.text_color }};
+    padding-block: {{ section.settings.padding_top }}px {{ section.settings.padding_bottom }}px;
+  "
+>
+  <div class="tovee-shop__header page-width">
+    {% if section.settings.subtitle != blank %}
+      <span class="tovee-shop__eyebrow">{{ section.settings.subtitle }}</span>
+    {% endif %}
+    {% if section.settings.title != blank %}
+      <h1 class="tovee-shop__title">{{ section.settings.title }}</h1>
+    {% endif %}
+    {% if section.settings.description != blank %}
+      <p class="tovee-shop__description">{{ section.settings.description }}</p>
+    {% endif %}
+  </div>
+
+  <!-- Mobile filter pills: lives OUTSIDE the grid so position:sticky works correctly -->
+  <div class="tovee-shop__filters-mobile" aria-label="Filter by category">
+    <div class="tovee-shop__filters-track" id="tovee-filters-track">
+      <button
+        class="tovee-shop__filter-pill is-active"
+        data-handle="all"
+        aria-pressed="true"
+      >
+        All
+      </button>
+      {% for col in collections %}
+        {% if col.products_count > 0 and col.handle != 'all' %}
+          <button
+            class="tovee-shop__filter-pill"
+            data-handle="{{ col.handle }}"
+            aria-pressed="false"
+          >
+            {{ col.title }}
+          </button>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="tovee-shop__layout page-width">
+
+    <aside class="tovee-shop__sidebar" id="tovee-sidebar" aria-label="Product categories">
+      <div class="tovee-shop__sidebar-inner">
+        <p class="tovee-shop__sidebar-label">Categories</p>
+
+        <nav class="tovee-shop__nav">
+          <button
+            class="tovee-shop__cat-btn tovee-shop__cat-btn--all is-active"
+            data-handle="all"
+            aria-pressed="true"
+          >
+            <span class="tovee-shop__cat-name">All Products</span>
+            <span class="tovee-shop__cat-count">{{ collections.all.products_count }}</span>
+          </button>
+
+          {% for col in collections %}
+            {% if col.products_count > 0 and col.handle != 'all' %}
+              <button
+                class="tovee-shop__cat-btn"
+                data-handle="{{ col.handle }}"
+                aria-pressed="false"
+              >
+                <span class="tovee-shop__cat-name">{{ col.title }}</span>
+                <span class="tovee-shop__cat-count">{{ col.products_count }}</span>
+              </button>
+            {% endif %}
+          {% endfor %}
+        </nav>
+      </div>
+    </aside>
+
+    <main class="tovee-shop__main" id="tovee-products" aria-live="polite" aria-atomic="true">
+      <div class="tovee-shop__toolbar">
+        <div class="tovee-shop__toolbar-text">
+          <p class="tovee-shop__active-label" id="tovee-active-label">All Products</p>
+          <p class="tovee-shop__count" id="tovee-count"></p>
+        </div>
+      </div>
+
+
+
+      {% paginate collections.all.products by 250 %}
+        <div class="tovee-shop__grid" id="tovee-grid">
+          {% for product in collections.all.products %}
+            {% capture col_handles %}
+              [
+                {% for col in product.collections %}
+                  "{{ col.handle }}"{% unless forloop.last %},{% endunless %}
+                {% endfor %}
+              ]
+            {% endcapture %}
+            <div
+              class="tovee-shop__grid-item"
+              data-collections='{{ col_handles | strip | escape }}'
+              data-product-id="{{ product.id }}"
+            >
+              {% content_for 'block',
+                type: '_product-card',
+                id: 'product-card',
+                closest.product: product,
+                product_view_context: 'collection'
+              %}
+            </div>
+          {% endfor %}
+        </div>
+      {% endpaginate %}
+
+      <div class="tovee-shop__empty" id="tovee-empty" hidden>
+        <p class="tovee-shop__empty-title">No products found</p>
+        <p class="tovee-shop__empty-text">Try browsing another category.</p>
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<script type="module">
+  class ToveeShop {
+    constructor(root) {
+      this.root = root;
+      this.grid = root.querySelector('#tovee-grid');
+      this.items = [...root.querySelectorAll('.tovee-shop__grid-item')];
+      this.label = root.querySelector('#tovee-active-label');
+      this.countEl = root.querySelector('#tovee-count');
+      this.emptyEl = root.querySelector('#tovee-empty');
+      this.filtersTrack = root.querySelector('#tovee-filters-track');
+      this.sidebarButtons = [...root.querySelectorAll('.tovee-shop__cat-btn')];
+      this.mobileButtons = [...root.querySelectorAll('.tovee-shop__filter-pill')];
+      this.allButtons = [...this.sidebarButtons, ...this.mobileButtons];
+
+      const params = new URLSearchParams(window.location.search);
+      const hash = window.location.hash.replace('#', '');
+      const initial = params.get('category') || hash || 'all';
+
+      this.sidebarButtons.forEach((btn) => {
+        btn.addEventListener('click', () => this.select(btn.dataset.handle, true));
+      });
+
+      this.mobileButtons.forEach((btn) => {
+        btn.addEventListener('click', () => this.select(btn.dataset.handle, true));
+      });
+
+      window.addEventListener('popstate', () => {
+        const p = new URLSearchParams(window.location.search);
+        const h = window.location.hash.replace('#', '');
+        const handle = p.get('category') || h || 'all';
+        this.select(handle, false);
+      });
+
+      this.select(initial, false);
+    }
+
+    #getButtonLabel(btn) {
+      const name = btn.querySelector('.tovee-shop__cat-name');
+      return name ? name.textContent.trim() : btn.textContent.trim();
+    }
+
+    #scrollActivePillIntoView(handle) {
+      const activePill = this.mobileButtons.find((btn) => btn.dataset.handle === handle);
+      if (!activePill || !this.filtersTrack) return;
+
+      const trackRect = this.filtersTrack.getBoundingClientRect();
+      const pillRect = activePill.getBoundingClientRect();
+      const offset = pillRect.left - trackRect.left - (trackRect.width / 2) + (pillRect.width / 2);
+
+      this.filtersTrack.scrollBy({ left: offset, behavior: 'smooth' });
+    }
+
+    select(handle, pushState = true) {
+      const sidebarBtn = this.sidebarButtons.find((b) => b.dataset.handle === handle)
+        || this.sidebarButtons.find((b) => b.dataset.handle === 'all');
+      const mobileBtn = this.mobileButtons.find((b) => b.dataset.handle === handle)
+        || this.mobileButtons.find((b) => b.dataset.handle === 'all');
+
+      if (!sidebarBtn) return;
+
+      this.allButtons.forEach((btn) => {
+        btn.classList.remove('is-active');
+        btn.setAttribute('aria-pressed', 'false');
+      });
+
+      sidebarBtn.classList.add('is-active');
+      sidebarBtn.setAttribute('aria-pressed', 'true');
+
+      if (mobileBtn) {
+        mobileBtn.classList.add('is-active');
+        mobileBtn.setAttribute('aria-pressed', 'true');
+        this.#scrollActivePillIntoView(handle);
+      }
+
+      this.label.textContent = this.#getButtonLabel(sidebarBtn);
+
+      if (pushState) {
+        const newUrl = handle === 'all'
+          ? window.location.pathname
+          : `${window.location.pathname}?category=${handle}`;
+        window.history.pushState({ category: handle }, '', newUrl);
+      }
+
+      let visibleCount = 0;
+      this.items.forEach((item) => {
+        const itemCollections = JSON.parse(item.dataset.collections || '[]');
+        const isVisible = handle === 'all' || itemCollections.includes(handle);
+
+        item.classList.toggle('is-hidden', !isVisible);
+        if (isVisible) visibleCount += 1;
+      });
+
+      this.countEl.textContent = `${visibleCount} product${visibleCount !== 1 ? 's' : ''}`;
+      this.grid.hidden = visibleCount === 0;
+      this.emptyEl.hidden = visibleCount !== 0;
+    }
+  }
+
+  const init = () => {
+    document.querySelectorAll('.tovee-shop').forEach((el) => new ToveeShop(el));
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  document.addEventListener('shopify:section:load', (event) => {
+    const root = event.target.querySelector('.tovee-shop');
+    if (root) new ToveeShop(root);
+  });
+</script>
+
+{% stylesheet %}
+  .tovee-shop {
+    position: relative;
+    background: var(--tovee-shop-bg, #faf5f5);
+    color: var(--tovee-shop-text, #2e0808);
+    min-height: 70vh;
+  }
+
+  .tovee-shop__header {
+    text-align: center;
+    max-width: 640px;
+    margin: 0 auto 48px;
+    padding-inline: 24px;
+  }
+
+  .tovee-shop__eyebrow {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--tovee-shop-accent, #c49292);
+    margin-bottom: 14px;
+  }
+
+  .tovee-shop__title {
+    font-family: var(--font-heading--family);
+    font-size: clamp(2rem, 4.5vw, 2.75rem);
+    font-weight: 300;
+    letter-spacing: 0.04em;
+    color: var(--tovee-shop-text, #2e0808);
+    margin: 0 0 14px;
+    line-height: 1.15;
+  }
+
+  .tovee-shop__description {
+    font-size: 0.92rem;
+    line-height: 1.7;
+    opacity: 0.78;
+    margin: 0;
+    font-weight: 300;
+  }
+
+  .tovee-shop__layout {
+    display: grid;
+    grid-template-columns: minmax(200px, 240px) minmax(0, 1fr);
+    gap: clamp(28px, 4vw, 56px);
+    align-items: start;
+    padding-inline: 24px;
+  }
+
+  .tovee-shop__sidebar {
+    position: sticky;
+    top: calc(var(--header-group-height, 72px) + 24px);
+  }
+
+  .tovee-shop__sidebar-inner {
+    padding: 4px 0;
+  }
+
+  .tovee-shop__sidebar-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    opacity: 0.55;
+    margin: 0 0 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(46, 8, 8, 0.08);
+  }
+
+  .tovee-shop__nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .tovee-shop__cat-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(46, 8, 8, 0.05);
+    cursor: pointer;
+    font-family: var(--font-body--family);
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: inherit;
+    text-align: left;
+    transition: color 0.25s ease, opacity 0.25s ease;
+    opacity: 0.72;
+  }
+
+  .tovee-shop__cat-btn:last-child {
+    border-bottom: none;
+  }
+
+  .tovee-shop__cat-btn:hover {
+    opacity: 1;
+    color: var(--tovee-shop-text, #2e0808);
+  }
+
+  .tovee-shop__cat-btn.is-active {
+    opacity: 1;
+    color: var(--tovee-shop-text, #2e0808);
+    font-weight: 500;
+  }
+
+  .tovee-shop__cat-btn.is-active .tovee-shop__cat-name {
+    position: relative;
+  }
+
+  .tovee-shop__cat-btn.is-active .tovee-shop__cat-name::before {
+    content: '';
+    position: absolute;
+    left: -14px;
+    top: 50%;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--tovee-shop-accent, #c49292);
+    transform: translateY(-50%);
+  }
+
+  .tovee-shop__cat-name {
+    min-width: 0;
+    line-height: 1.4;
+  }
+
+  .tovee-shop__cat-count {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    opacity: 0.45;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tovee-shop__main {
+    min-width: 0;
+  }
+
+  .tovee-shop__toolbar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid rgba(46, 8, 8, 0.08);
+  }
+
+  .tovee-shop__toolbar-text {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px 14px;
+  }
+
+  .tovee-shop__active-label {
+    font-family: var(--font-heading--family);
+    font-size: clamp(1.15rem, 2.5vw, 1.45rem);
+    font-weight: 400;
+    letter-spacing: 0.03em;
+    margin: 0;
+    color: var(--tovee-shop-text, #2e0808);
+  }
+
+  .tovee-shop__count {
+    font-size: 0.82rem;
+    opacity: 0.55;
+    margin: 0;
+    font-weight: 300;
+  }
+
+  /* Mobile filter pills — hidden on desktop, shown & sticky on mobile */
+  .tovee-shop__filters-mobile {
+    display: none;
+  }
+
+  .tovee-shop__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(16px, 2vw, 28px);
+    align-items: stretch;
+  }
+
+  .tovee-shop__grid-item {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    transition: opacity 0.28s ease, transform 0.28s ease;
+  }
+
+  /* Force product-card to fill the full grid cell height */
+  .tovee-shop__grid-item > product-card,
+  .tovee-shop__grid-item > .product-card {
+    flex: 1;
+    height: 100%;
+  }
+
+  .tovee-shop__grid-item.is-hidden {
+    display: none;
+  }
+
+  .tovee-shop__empty {
+    text-align: center;
+    padding: 64px 24px;
+    border: 1px dashed rgba(46, 8, 8, 0.12);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.35);
+  }
+
+  .tovee-shop__empty-title {
+    font-family: var(--font-heading--family);
+    font-size: 1.15rem;
+    font-weight: 400;
+    margin: 0 0 8px;
+  }
+
+  .tovee-shop__empty-text {
+    margin: 0;
+    font-size: 0.88rem;
+    opacity: 0.65;
+  }
+
+  @media screen and (max-width: 1099px) {
+    .tovee-shop__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media screen and (max-width: 899px) {
+    .tovee-shop__header {
+      margin-bottom: 28px;
+    }
+
+    .tovee-shop__layout {
+      grid-template-columns: 1fr;
+      gap: 0;
+      padding-inline: 16px;
+    }
+
+    .tovee-shop__sidebar {
+      display: none;
+    }
+
+    .tovee-shop__toolbar {
+      margin-bottom: 16px;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .tovee-shop__filters-mobile {
+      display: block;
+      padding: 10px 0 16px;
+    }
+
+    .tovee-shop__filters-track {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scroll-snap-type: x proximity;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding-inline: 16px;
+    }
+
+    .tovee-shop__filters-track::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tovee-shop__filter-pill {
+      flex: 0 0 auto;
+      scroll-snap-align: start;
+      border: 1px solid rgba(46, 8, 8, 0.1);
+      background: rgba(255, 255, 255, 0.55);
+      color: inherit;
+      border-radius: 999px;
+      padding: 9px 16px;
+      font-family: var(--font-body--family);
+      font-size: 0.82rem;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
+      opacity: 0.82;
+    }
+
+    .tovee-shop__filter-pill:hover {
+      opacity: 1;
+      border-color: rgba(46, 8, 8, 0.18);
+    }
+
+    .tovee-shop__filter-pill.is-active {
+      background: var(--tovee-shop-text, #2e0808);
+      border-color: var(--tovee-shop-text, #2e0808);
+      color: #fff;
+      opacity: 1;
+    }
+
+    .tovee-shop__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+  }
+
+  @media screen and (min-width: 900px) {
+    .tovee-shop__layout {
+      padding-inline: clamp(24px, 4vw, 60px);
+    }
+
+    .tovee-shop__header {
+      padding-inline: clamp(24px, 4vw, 60px);
+    }
+  }
+
+  @media screen and (min-width: 1200px) {
+    .tovee-shop__layout {
+      max-width: 1400px;
+      margin-inline: auto;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Tovee Shop",
+  "tag": "section",
+  "class": "tovee-shop-section",
+  "settings": [
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background color",
+      "default": "#FAF5F5"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text color",
+      "default": "#2E0808"
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "Accent color",
+      "default": "#C49292"
+    },
+    {
+      "type": "header",
+      "content": "Page header"
+    },
+    {
+      "type": "text",
+      "id": "subtitle",
+      "label": "Subtitle",
+      "default": "Our Collection"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Title",
+      "default": "Shop"
+    },
+    {
+      "type": "textarea",
+      "id": "description",
+      "label": "Description",
+      "default": "Explore our curated skincare essentials, crafted with care for every skin type."
+    },
+    {
+      "type": "header",
+      "content": "Section padding"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Top padding",
+      "min": 24,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 56
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Bottom padding",
+      "min": 24,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 80
+    }
+  ]
+}
+{% endschema %}

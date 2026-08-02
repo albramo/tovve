@@ -1,0 +1,1651 @@
+{%- doc -%}
+  This snippet is used to render a product card.
+  It is used in the product block, featured product block, and the product card block.
+  The product object is null or when placeholders are rendered.
+
+  @param {object} product - The product object
+  @param {object} children - The children of the product card
+  @param {object} [block] - The block object
+  @param {number} [product_card_gap] - The gap between the product card children (overrides block settings)
+  @param {string} [product_view_context] - The context in which the product card is being rendered. Used for standard events.
+{%- enddoc -%}
+
+{% assign block_settings = block.settings %}
+
+{% style %}
+  {% if request.visual_preview_mode %}
+    product-card[data-product-transition] {
+      width: 100%;
+      min-width: 250px;
+    }
+  {% endif %}
+{% endstyle %}
+
+{% liquid
+  assign onboarding = false
+  if product.id == empty or product == blank
+    assign onboarding = true
+  endif
+
+  assign product_card_id = 'product-card-link-' | append: block.id | append: '-' | append: product.id
+  assign product_card_gap_value = product_card_gap | default: block_settings.product_card_gap
+
+  # Logic to determine which variant URL to use (matching swatch selection logic)
+  assign variant_to_link = product.selected_or_first_available_variant
+
+  if settings.transition_to_main_product
+    assign featured_image = variant_to_link.featured_image
+    if featured_image == blank
+      assign featured_image = product.featured_media.preview_image
+    endif
+
+    if featured_image != blank
+      assign featured_media_url = featured_image | image_url: width: 500
+    endif
+  endif
+
+  assign discount_percent = 0
+  if product.compare_at_price > product.price
+    assign discount_percent = product.compare_at_price | minus: product.price | times: 100 | divided_by: product.compare_at_price
+  endif
+
+  if block_settings.background_color != blank
+    render 'contrast-override', background_color: block_settings.background_color, text_color: block_settings.text_color, section_id: block.id
+  endif
+%}
+
+{%- if product_view_context == 'recommendation' -%}
+  <!-- Custom Recommendation Card Overlay Design -->
+  <product-card
+    class="rec-card"
+    data-product-id="{{ product.id }}"
+    id="rec-product-card-container-{{ product.id }}"
+    {% if settings.transition_to_main_product %}
+      data-product-transition="true"
+      data-featured-media-url="{{ featured_image | image_url: width: 500 }}"
+      on:click="/handleViewTransition"
+    {% endif %}
+    {% if onboarding %}
+      data-placeholder="true"
+    {% endif %}
+    {%- unless onboarding -%}
+      view-event-payload="{{ product | standard_event_data: 'view', context: 'recommendation' | escape }}"
+    {%- endunless -%}
+  >
+    <a
+      id="rec-link-{{ product.id | md5 }}"
+      {% unless onboarding %}
+        href="{{ variant_to_link.url }}"
+      {% endunless %}
+      class="rec-card__link"
+      ref="productCardLink"
+      aria-label="{{ product.title | escape }}"
+    >
+      <span class="visually-hidden">
+        {{ product.title }}
+      </span>
+    </a>
+
+    <div class="rec-card__body">
+      <div class="product-card__gallery rec-media">
+        {{ children }}
+
+        {% if discount_percent > 0 %}
+          <div class="rec-card__discount-badge">
+            <span>-{{ discount_percent }}%</span>
+          </div>
+        {% endif %}
+
+        {%- unless onboarding -%}
+          {% assign modal_id = 'qv-modal-' | append: block.id | append: '-' | append: product.id %}
+          {% assign product_form_id = 'product-form-card-' | append: product.id | append: '-' | append: block.id %}
+
+          <div class="rec-media-actions">
+            <!-- Quick View Section -->
+            <div class="rec-quick-view-section">
+              <button
+                type="button"
+                class="rec-quick-view-btn"
+                aria-label="Quick View"
+                onclick="event.preventDefault(); event.stopPropagation(); const m = document.getElementById('{{ modal_id }}'); if(!m) return; if(m.parentElement !== document.body) document.body.appendChild(m); if(typeof m.open === 'function') { m.open(); } else { m.classList.add('is-open'); m.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; }"
+              >
+                <svg class="rec-icon rec-qv-icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span>Quick View</span>
+              </button>
+            </div>
+
+            <!-- Actions Overlay Overlay (Add to Cart + Translucent Quantity Selector) -->
+            <div class="rec-overlay">
+              <product-form-component
+                data-section-id="{{ block.id }}"
+                data-product-id="{{ product.id }}"
+                on:submit="/handleSubmit"
+                class="rec-form-wrapper"
+                data-quantity-default="{% if variant_to_link.quantity_rule.min %}{{ variant_to_link.quantity_rule.min }}{% else %}1{% endif %}"
+              >
+                {%- form 'product', product, id: product_form_id, novalidate: 'novalidate', data-type: 'add-to-cart-form' -%}
+                  <input type="hidden" name="id" ref="variantId" value="{{ variant_to_link.id }}">
+                  <div class="visually-hidden" ref="liveRegion" role="status"></div>
+                  <button type="submit" class="rec-add-to-cart-btn" {% unless variant_to_link.available %}disabled{% endunless %} title="Add to Cart">
+                    <svg class="rec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="9" cy="21" r="1"></circle>
+                      <circle cx="20" cy="21" r="1"></circle>
+                      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                    <span>Add To Cart</span>
+                  </button>
+                {%- endform -%}
+              </product-form-component>
+
+              <div class="rec-qty-stepper-wrapper">
+                {% render 'quantity-selector',
+                  product: product,
+                  variant: variant_to_link,
+                  class: 'rec-qty-selector',
+                  form_id: product_form_id
+                %}
+              </div>
+            </div>
+          </div>
+
+          {% render 'quick-view-modal', product: product, block: block %}
+        {%- endunless -%}
+      </div>
+
+      <div class="rec-body">
+        <h3 class="rec-title">{{ product.title }}</h3>
+        <div class="rec-price">
+          {% if product.compare_at_price > product.price %}
+            <span class="rec-price-old">{{ product.compare_at_price | money }}</span>
+            <span class="rec-price-new">{{ product.price | money }}</span>
+          {% else %}
+            <span class="rec-price-new" style="color: #1c1c1c;">{{ product.price | money }}</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </product-card>
+
+  <style>
+    .rec-card {
+      position: relative;
+      width: 100%;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .rec-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+
+    .rec-card__link {
+      position: absolute;
+      inset: 0;
+      z-index: 1 !important;
+      background: transparent;
+    }
+
+    .rec-card__body {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .rec-media {
+      overflow: hidden;
+      border-radius: 16px 16px 0 0;
+    }
+
+    /* Discount badge */
+    .rec-card__discount-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 10;
+      background: #d9534f;
+      color: #fff;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    /* Hover Actions Panel */
+    .rec-media-actions {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      bottom: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity .25s ease, transform .25s ease;
+      pointer-events: none !important; /* Allow hover/swap to pass straight through */
+      z-index: 12;
+    }
+
+    /* Desktop hover activation */
+    @media (hover: hover) {
+      .rec-card:hover .rec-media-actions {
+        opacity: 1 !important;
+        transform: translateY(0) !important;
+        pointer-events: none !important; /* Keep passing through to trigger card swap */
+      }
+    }
+
+    /* Mobile screen layout stack alignment on the LEFT */
+    @media (max-width: 768px) {
+      .rec-media-actions {
+        position: absolute !important;
+        left: 8px !important; /* Positioned on the LEFT */
+        right: auto !important;
+        bottom: 4px !important; /* Moved down closer to the bottom of the card image! */
+        top: auto !important;
+        width: auto !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important; /* Align content to the left */
+        gap: 6px !important;
+        opacity: 1 !important;
+        transform: none !important;
+        pointer-events: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+      }
+    }
+
+    /* Quick View section */
+    .rec-quick-view-section {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      pointer-events: auto !important; /* Capture click events specifically on the button */
+    }
+
+    .rec-quick-view-btn {
+      background: rgba(255, 255, 255, 0.85) !important;
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.4) !important;
+      border-radius: 8px !important;
+      color: #1c1c1c !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      cursor: pointer !important;
+      font-family: inherit !important;
+      font-size: 11px !important;
+      font-weight: 600 !important;
+      letter-spacing: 0.6px !important;
+      text-transform: uppercase !important;
+      position: relative !important;
+      padding: 8px 14px !important; /* Elegant padded capsule background */
+      pointer-events: auto !important;
+      z-index: 15 !important;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08) !important;
+      text-decoration: none !important;
+      transition: background 0.25s ease, transform 0.2s ease !important;
+    }
+
+    .rec-quick-view-btn:hover {
+      background: rgba(255, 255, 255, 0.95) !important;
+      transform: translateY(-1px) !important;
+    }
+
+    .rec-icon {
+      width: 16px !important;
+      height: 16px !important;
+      flex-shrink: 0;
+      stroke: currentColor !important;
+      fill: none !important;
+    }
+
+    /* Sliding eye icon hover animation */
+    .rec-qv-icon-eye {
+      width: 0 !important;
+      opacity: 0 !important;
+      overflow: hidden !important;
+      transform: scale(0.4) rotate(-25deg);
+      transition: width .28s ease, opacity .22s ease, transform .32s cubic-bezier(.34,1.56,.64,1) !important;
+    }
+
+    .rec-quick-view-btn:hover .rec-qv-icon-eye {
+      width: 16px !important;
+      opacity: 1 !important;
+      transform: scale(1) rotate(0deg) !important;
+    }
+
+    @media (max-width: 768px) {
+      .rec-quick-view-section {
+        position: relative !important;
+        top: auto !important;
+        right: auto !important;
+        justify-content: flex-start !important; /* Align eye button to the LEFT */
+        width: auto !important;
+      }
+      .rec-quick-view-btn {
+        background: rgba(255, 255, 255, 0.85) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        color: #1c1c1c !important;
+        padding: 6px !important;
+        border-radius: 50% !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08) !important;
+        text-shadow: none !important;
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+      .rec-quick-view-btn span {
+        display: none !important;
+      }
+      .rec-quick-view-btn .rec-qv-icon-eye {
+        width: 16px !important;
+        opacity: 1 !important;
+        transform: none !important;
+      }
+    }
+
+    /* Overlay bar: Add To Cart + Translucent qty stepper */
+    .rec-overlay {
+      width: 100% !important;
+      background: rgba(255, 255, 255, 0.85) !important;
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+      border-radius: 10px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important; /* Centered content side-by-side */
+      gap: 8px !important;
+      padding: 10px 8px !important;
+      color: #1c1c1c !important;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+      border: 1px solid rgba(255, 255, 255, 0.4) !important;
+      box-sizing: border-box !important;
+      height: 42px !important;
+      pointer-events: auto !important; /* Capture click events specifically on the overlay */
+      z-index: 15 !important;
+    }
+
+    .rec-form-wrapper {
+      display: block;
+      width: auto !important;
+      flex: none !important;
+    }
+
+    .rec-form-wrapper form {
+      margin: 0;
+      padding: 0;
+      width: auto !important;
+      display: block;
+    }
+
+    .rec-add-to-cart-btn {
+      background: none !important;
+      border: none !important;
+      color: #1c1c1c !important;
+      --loader-color: #1c1c1c !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+      cursor: pointer !important;
+      font-size: 12px !important;
+      font-weight: 600 !important;
+      padding: 4px 5px !important;
+      border-radius: 6px !important;
+      transition: background .2s ease, color .2s ease !important;
+      white-space: nowrap !important;
+      box-shadow: none !important;
+      text-transform: none !important;
+      height: auto !important;
+      width: auto !important;
+    }
+
+    .rec-add-to-cart-btn:hover {
+      background: rgba(0, 0, 0, 0.04) !important;
+    }
+
+    .rec-add-to-cart-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Custom Translucent Quantity Stepper styling inside card */
+    .rec-qty-stepper-wrapper {
+      display: flex !important;
+      align-items: center !important;
+    }
+
+    .rec-qty-stepper-wrapper .quantity-selector {
+      background: rgba(0, 0, 0, 0.04) !important;
+      border: none !important;
+      border-radius: 5px !important;
+    padding: 2px !important;
+      display: flex !important;
+      align-items: center !important;
+    gap: 4px !important;
+    height: 34px !important; /* Prominent desktop height */
+    width: 92px !important;  /* Wider layout for larger buttons */
+    min-width: 92px !important;
+    max-width: 92px !important;
+      box-shadow: none !important;
+      box-sizing: border-box !important;
+    }
+
+    .rec-qty-stepper-wrapper .quantity-selector input[type='number'] {
+    width: 18px !important;
+    min-width: 18px !important;
+    max-width: 18px !important;
+      font-size: 13px !important;
+    font-weight: 700 !important;
+      color: #1c1c1c !important;
+      background: transparent !important;
+      border: none !important;
+      text-align: center !important;
+      padding: 0 !important;
+      height: auto !important;
+    }
+
+    .rec-qty-stepper-wrapper .quantity-selector button.quantity-minus,
+    .rec-qty-stepper-wrapper .quantity-selector button.quantity-plus {
+      background: rgba(0, 0, 0, 0.04) !important;
+      border: none !important;
+      color: #1c1c1c !important;
+    width: 24px !important;  /* Large easy-to-click buttons on desktop */
+    height: 24px !important;
+    min-width: 24px !important;
+    min-height: 24px !important;
+      border-radius: 5px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      cursor: pointer !important;
+    font-size: 15px !important;
+      line-height: 1 !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+      transition: background 0.2s ease !important;
+    }
+
+    .rec-qty-stepper-wrapper .quantity-selector button.quantity-minus:hover,
+    .rec-qty-stepper-wrapper .quantity-selector button.quantity-plus:hover {
+      background: rgba(0, 0, 0, 0.08) !important;
+    }
+
+    .rec-qty-stepper-wrapper .quantity-selector button.quantity-minus svg,
+    .rec-qty-stepper-wrapper .quantity-selector button.quantity-plus svg {
+    width: 11px !important;
+    height: 11px !important;
+      fill: none !important;
+      stroke: #1c1c1c !important;
+      color: #1c1c1c !important;
+    }
+
+    @media (max-width: 768px) {
+      .rec-overlay {
+        position: relative !important;
+        bottom: auto !important;
+        left: auto !important;
+        right: auto !important;
+        width: auto !important; /* Shrink-wrap the width of the compact content! */
+        max-width: none !important;
+        background: rgba(255, 255, 255, 0.85) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        padding: 4px 6px !important; /* Compact padding */
+        border-radius: 20px !important;
+        display: inline-flex !important; /* Shrink wrap content snugly */
+        flex: none !important;
+        align-items: center !important;
+        gap: 4px !important; /* Tight gap */
+        height: 28px !important; /* Super compact height */
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+        box-sizing: border-box !important;
+      }
+
+      .rec-form-wrapper {
+        display: inline-flex !important;
+        width: auto !important;
+        flex: none !important;
+      }
+
+      .rec-form-wrapper form {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: auto !important;
+        display: inline-flex !important;
+      }
+
+      /* Hide Add to Cart text on mobile screens to save space */
+      .rec-add-to-cart-btn span {
+        display: none !important;
+      }
+
+      .rec-add-to-cart-btn {
+        padding: 0 !important;
+        height: 20px !important;
+        width: 20px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+
+      .rec-add-to-cart-btn svg {
+        width: 14px !important;
+        height: 14px !important;
+        stroke: #1c1c1c !important;
+      }
+
+      .rec-qty-stepper-wrapper,
+      .rec-qty-stepper-wrapper .quantity-selector-wrapper,
+      .rec-qty-stepper-wrapper .quantity-selector {
+        width: 80px !important; /* Enlarged further to accommodate large, tap-friendly buttons */
+        min-width: 80px !important;
+        max-width: 80px !important;
+        flex: none !important;
+        display: inline-flex !important;
+        height: 28px !important; /* Heightened to 28px for beautiful visual proportion */
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+        background: rgba(0, 0, 0, 0.04) !important;
+        border-radius: 10px !important;
+        box-sizing: border-box !important;
+        --quantity-selector-width: 80px !important;
+        gap: 2px !important;
+        justify-content: center !important;
+      }
+
+      .rec-qty-stepper-wrapper .quantity-selector button.quantity-minus,
+      .rec-qty-stepper-wrapper .quantity-selector button.quantity-plus {
+        background: transparent !important;
+        color: #1c1c1c !important;
+        width: 22px !important; /* Enlarged to 22px so the tap targets are huge and extremely easy to click */
+        height: 22px !important;
+        min-width: 22px !important;
+        min-height: 22px !important;
+        max-width: 22px !important;
+        max-height: 22px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        flex: none !important;
+      }
+
+      .rec-qty-stepper-wrapper .quantity-selector button.quantity-minus svg,
+      .rec-qty-stepper-wrapper .quantity-selector button.quantity-plus svg {
+        width: 11px !important; /* Larger SVGs inside plus and minus */
+        height: 11px !important;
+        stroke: #1c1c1c !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      .rec-qty-stepper-wrapper .quantity-selector input[type='number'] {
+        width: 20px !important; /* Perfect cozy centered spacing */
+        min-width: 20px !important;
+        max-width: 20px !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        color: #1c1c1c !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        text-align: center !important;
+        flex: none !important;
+        height: 100% !important;
+      }
+    }
+
+    /* Body & Price details */
+    .rec-body {
+      padding: 12px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+      flex: 1;
+    }
+
+    .rec-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1c1c1c;
+      margin: 0;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .rec-price {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      direction: ltr;
+      margin-top: 2px;
+    }
+
+    .rec-price-old {
+      font-size: 11px;
+      color: #a3a3a3;
+      text-decoration: line-through;
+      font-weight: 400;
+    }
+
+    .rec-price-new {
+      font-size: 13px;
+      color: #d9534f;
+      font-weight: 700;
+    }
+  </style>
+{%- else -%}
+  <!-- Default Global Card Design -->
+  <product-card
+    class="product-card size-style"
+    style="{% render 'size-style', settings: block_settings %}"
+    data-product-id="{{ product.id }}"
+    id="product-card-{{ block.id }}"
+    {% if settings.transition_to_main_product %}
+      data-product-transition="true"
+      data-featured-media-url="{{ featured_media_url }}"
+      on:click="/handleViewTransition"
+    {% endif %}
+    {{ block.shopify_attributes }}
+    {% if onboarding %}
+      data-placeholder="true"
+    {% endif %}
+    {%- unless onboarding -%}
+      {% # theme-check-disable-next-line UnknownFilter %}
+      view-event-payload="{{ product | standard_event_data: 'view', context: product_view_context | escape }}"
+    {%- endunless -%}
+  >
+    <a
+      id="{{ product_card_id | md5 }}"
+      {% unless onboarding %}
+        href="{{ variant_to_link.url }}"
+      {% endunless %}
+      class="product-card__link"
+      ref="productCardLink"
+    >
+      <span class="visually-hidden">
+        {{ product.title }}
+      </span>
+    </a>
+
+    <div class="product-card__body">
+      <div class="product-card__gallery">
+        {% if discount_percent > 0 %}
+          <div class="product-card__discount-badge">
+            <span>-{{ discount_percent }}%</span>
+          </div>
+        {% endif %}
+        {%- unless onboarding -%}
+          {% assign modal_id = 'qv-modal-' | append: block.id | append: '-' | append: product.id %}
+          <button
+            type="button"
+            class="product-card__quick-view-btn std-quick-view-btn"
+            aria-label="Quick View"
+            onclick="event.preventDefault(); event.stopPropagation(); const m = document.getElementById('{{ modal_id }}'); if(!m) return; if(m.parentElement !== document.body) document.body.appendChild(m); if(typeof m.open === 'function') { m.open(); } else { m.classList.add('is-open'); m.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; }"
+          >
+            <svg class="std-icon std-qv-icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <span>Quick View</span>
+          </button>
+
+          {% render 'quick-view-modal', product: product, block: block %}
+        {%- endunless -%}
+        {{ children }}
+      </div>
+
+      <div
+        class="
+          product-card__info
+          product-grid__card
+          spacing-style
+          border-style
+          {% if block_settings.background_color != blank %} color-custom-{{ block.id }}{% endif %}
+        "
+        style="
+          {% render 'border-override', settings: block_settings %}
+          {% render 'spacing-style', settings: block_settings %}
+        "
+      >
+        {% unless onboarding %}
+          {% assign product_form_id = 'product-form-card-' | append: product.id | append: '-' | append: block.id %}
+          <h3 class="product-card__title">{{ product.title }}</h3>
+          <div class="product-card__price">
+            <span class="product-card__current-price{% if discount_percent > 0 %} product-card__current-price--sale{% endif %}">{{ product.price | money }}</span>
+            {% if discount_percent > 0 %}
+              <span class="product-card__compare-price">{{ product.compare_at_price | money }}</span>
+            {% endif %}
+          </div>
+          <div class="product-card__actions">
+            <div class="product-card__qty">
+              {% render 'quantity-selector',
+                product: product,
+                variant: variant_to_link,
+                class: 'product-card__qty-selector',
+                form_id: product_form_id
+              %}
+            </div>
+            <product-form-component
+              data-section-id="{{ block.id }}"
+              data-product-id="{{ product.id }}"
+              on:submit="/handleSubmit"
+              class="product-card__form-wrapper"
+              data-quantity-default="{% if variant_to_link.quantity_rule.min %}{{ variant_to_link.quantity_rule.min }}{% else %}1{% endif %}"
+            >
+              {%- form 'product', product, id: product_form_id, novalidate: 'novalidate', data-type: 'add-to-cart-form' -%}
+                <input type="hidden" name="id" ref="variantId" value="{{ variant_to_link.id }}">
+                <div class="visually-hidden" ref="liveRegion" role="status"></div>
+                {% render 'add-to-cart-button',
+                  add_to_cart_text: 'Add to cart',
+                  class: 'product-card__buy-btn',
+                  can_add_to_cart: variant_to_link.available,
+                  product: product,
+                  icon_only_on_mobile: true,
+                  use_header_cart_icon: true
+                %}
+              {%- endform -%}
+            </product-form-component>
+          </div>
+        {% endunless %}
+      </div>
+    </div>
+  </product-card>
+
+  <style>
+    .std-quick-view-btn {
+      position: absolute !important;
+      bottom: 12px !important;
+      left: 50% !important;
+      transform: translateX(-50%) translateY(8px) !important;
+      z-index: 15 !important;
+      background: rgba(255, 255, 255, 0.85) !important;
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.4) !important;
+      border-radius: 8px !important;
+      color: #1c1c1c !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      cursor: pointer !important;
+      font-family: inherit !important;
+      font-size: 11px !important;
+      font-weight: 600 !important;
+      letter-spacing: 0.6px !important;
+      text-transform: uppercase !important;
+      padding: 8px 14px !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transition: opacity 0.3s ease, transform 0.3s ease, background 0.2s ease !important;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08) !important;
+      width: auto !important;
+      height: auto !important;
+      text-decoration: none !important;
+    }
+
+    .product-card:hover .std-quick-view-btn {
+      opacity: 1 !important;
+      transform: translateX(-50%) translateY(0) !important;
+      pointer-events: auto !important;
+    }
+
+    .std-quick-view-btn:hover {
+      background: rgba(255, 255, 255, 0.95) !important;
+      transform: translateX(-50%) translateY(-1px) !important;
+    }
+
+    .std-icon {
+      width: 16px !important;
+      height: 16px !important;
+      flex-shrink: 0;
+      stroke: currentColor !important;
+      fill: none !important;
+    }
+
+    /* Sliding eye icon hover animation for standard cards */
+    .std-qv-icon-eye {
+      width: 0 !important;
+      opacity: 0 !important;
+      overflow: hidden !important;
+      transform: scale(0.4) rotate(-25deg);
+      transition: width .28s ease, opacity .22s ease, transform .32s cubic-bezier(.34,1.56,.64,1) !important;
+    }
+
+    .std-quick-view-btn:hover .std-qv-icon-eye {
+      width: 16px !important;
+      opacity: 1 !important;
+      transform: scale(1) rotate(0deg) !important;
+    }
+
+    @media (max-width: 768px) {
+      .std-quick-view-btn {
+        left: 12px !important;
+        right: auto !important;
+        transform: none !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        border-radius: 50% !important;
+        padding: 6px !important;
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+      .std-quick-view-btn span {
+        display: none !important;
+      }
+      .std-quick-view-btn .std-qv-icon-eye {
+        width: 16px !important;
+        opacity: 1 !important;
+        transform: none !important;
+      }
+    }
+  </style>
+{%- endif -%}
+
+{% stylesheet %}
+  .product-card__placeholder-image svg {
+    height: 100%;
+  }
+
+  .product-card__content slideshow-component {
+    --cursor: pointer;
+  }
+
+  @media screen and (max-width: 1099px) {
+    .product-card slideshow-arrows .slideshow-control {
+      display: none;
+    }
+  }
+
+  /* ── Card wrapper ─────────────────────────────── */
+  .product-card {
+    position: relative;
+    background: var(--color-brand-warm-white);
+    border-radius: 20px;
+    overflow: hidden;
+    transition: box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 20px rgb(var(--color-brand-dark-rgb) / 0.04);
+    border: 1px solid var(--color-border-soft);
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 100%;
+    /* The qty/button row switches between stacked and side-by-side based on
+       the card's OWN rendered width, not the browser viewport — a viewport
+       media query gets this wrong whenever the card is narrower (or wider)
+       than its viewport would suggest, e.g. multi-column grids, or the
+       theme editor's preview iframe, which is often narrower than the
+       viewport it claims to represent. */
+    container-type: inline-size;
+    container-name: product-card;
+  }
+
+  .product-card:hover {
+    box-shadow: 0 16px 36px rgb(var(--color-brand-dark-rgb) / 0.08);
+    transform: translateY(-4px);
+  }
+
+  /* ── Image Hover Effects ──────────────────────── */
+  .product-card .card-gallery img,
+  .product-card .product-card__gallery img {
+    transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  .product-card:hover .card-gallery img,
+  .product-card:hover .product-card__gallery img {
+    transform: scale(1.06);
+  }
+
+  /* ── Body ─────────────────────────────────────── */
+  .product-card__body {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;  /* prevent flex overflow */
+  }
+
+  /* ── Gallery / image area ─────────────────────── */
+  .product-card__gallery {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 1;
+    flex-shrink: 0;
+    border-radius: 20px 20px 0 0;
+  }
+
+  /* Force gallery to fill the square — stops quick-add icon clipping when image ratio varies */
+  .product-card__gallery .card-gallery {
+    height: 100%;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+  }
+
+  .product-card__gallery .card-gallery > a,
+  .product-card__gallery .card-gallery slideshow-component {
+    display: block;
+    height: 100%;
+    width: 100%;
+  }
+
+  .product-card__gallery .card-gallery .product-media-container,
+  .product-card__gallery .card-gallery .product-media-container img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+  }
+
+  @media screen and (max-width: 649px) {
+    .product-card__gallery {
+      aspect-ratio: 1 / 1.05;
+    }
+
+    .product-card__gallery .card-gallery {
+      aspect-ratio: 1 / 1.05;
+    }
+
+    .product-card__discount-badge {
+      top: 6px;
+      left: 6px;
+      padding: 4px 8px;
+      font-size: 0.7rem;
+      border-radius: 6px;
+    }
+  }
+
+  /* ── Discount badge (Lighter background & smaller/higher) ───────────── */
+  .product-card__discount-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 10;
+    background: #d9534f;
+    color: #fff;
+    padding: 4px 9px;
+    border-radius: 6px;
+    font-family: var(--font-body--family);
+    font-size: 0.72rem;
+    font-weight: 700;
+    box-shadow: 0 3px 10px rgba(217, 83, 79, 0.3);
+    letter-spacing: 0.02em;
+    animation: pulse 2.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(1.04); }
+  }
+
+  .product-card__discount-badge span {
+    display: block;
+  }
+
+  /* ── Floating Quick View Eye Button & Cart Icon (Desktop Hover) ── */
+  .product-card__quick-view-btn {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    z-index: 15;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #ffffff;
+    color: var(--color-brand-dark, #2e0808);
+    border: 1px solid rgba(46, 8, 8, 0.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+    pointer-events: auto;
+  }
+
+  .product-card__quick-view-btn:hover {
+    background: var(--color-brand-burgundy, #800020);
+    color: #ffffff;
+    transform: scale(1.12);
+    box-shadow: 0 6px 18px rgba(128, 0, 32, 0.3);
+  }
+
+  .product-card__quick-view-btn svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+  }
+
+  /* Position Quick Add / Cart Button on Left ABOVE Eye Icon & Hover Fade */
+  .product-card .quick-add__button {
+    left: 12px !important;
+    right: auto !important;
+    bottom: 58px !important;
+    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), scale 0.25s ease !important;
+  }
+
+  @media screen and (min-width: 750px) {
+    .product-card__quick-view-btn {
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+    }
+
+    .product-card:hover .product-card__quick-view-btn {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .product-card .quick-add__button {
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+    }
+
+    .product-card:hover .quick-add__button {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+  }
+
+  /* ── Quantity + actions row ───────────────────── */
+  .product-card__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
+    margin-top: auto;
+    min-width: 0;
+  }
+
+  .product-card__qty {
+    --minimum-touch-target: 28px;
+
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    align-self: center;
+  }
+
+  .product-card__qty .quantity-selector-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    gap: 0;
+    flex-wrap: nowrap;
+    width: auto;
+  }
+
+  .product-card__qty .price-per-item {
+    display: none;
+  }
+
+  .product-card__qty .product-card__qty-selector {
+    --quantity-selector-width: 110px;
+
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2px;
+    width: auto;
+    min-width: 110px;
+    height: 42px;
+    padding: 4px;
+    margin: 0;
+    overflow: visible;
+    background: rgb(var(--color-brand-dark-rgb) / 0.035) !important;
+    border: 1px solid rgb(var(--color-brand-dark-rgb) / 0.1) !important;
+    border-radius: 999px !important;
+    box-shadow: none !important;
+    flex: none !important;
+    align-self: auto !important;
+    color: var(--color-brand-dark);
+  }
+
+  .product-card__qty .product-card__qty-selector :is(.quantity-minus, .quantity-plus) {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+    padding: 0;
+    border-radius: 50% !important;
+    background: var(--color-brand-warm-white) !important;
+    border: 1px solid rgb(var(--color-brand-dark-rgb) / 0.1) !important;
+    box-shadow: 0 1px 4px rgb(var(--color-brand-dark-rgb) / 0.08) !important;
+    color: var(--color-brand-dark);
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  }
+
+  .product-card__qty .product-card__qty-selector :is(.quantity-minus, .quantity-plus):hover:not(:disabled) {
+    background: var(--color-brand-burgundy) !important;
+    border-color: var(--color-brand-burgundy) !important;
+    color: #ffffff;
+    transform: scale(1.06);
+  }
+
+  .product-card__qty .product-card__qty-selector :is(.quantity-minus, .quantity-plus):active:not(:disabled) {
+    transform: scale(0.94);
+  }
+
+  .product-card__qty .product-card__qty-selector input[type='number'] {
+    width: 34px;
+    min-width: 30px;
+    max-width: 38px;
+    padding: 0;
+    margin: 0;
+    font-family: var(--font-body--family);
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    color: var(--color-brand-dark);
+    background: transparent !important;
+    border: none !important;
+  }
+
+  .product-card__qty .product-card__qty-selector svg {
+    width: 10px;
+    height: 10px;
+    opacity: 0.85;
+  }
+
+  /* ── Row vs. stacked switch, driven by the CARD's own width ───────────
+     @container replaces the old `@media (min-width/max-width: 1100px)`
+     pair. Falls back to the old viewport media queries for browsers
+     without container query support (@supports check below). */
+  @container product-card (min-width: 340px) {
+    .product-card__actions {
+      flex-direction: row;
+      flex-wrap: wrap;
+      row-gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .product-card__qty {
+      margin-right: auto;
+      align-self: auto;
+    }
+
+    .product-card__form-wrapper {
+      flex: 0 0 auto;
+      width: auto;
+      margin-left: auto;
+    }
+
+    .product-card__buy-btn {
+      flex: none;
+      width: auto;
+    }
+  }
+
+  @container product-card (max-width: 339px) {
+    .product-card__form-wrapper,
+    .product-card__form-wrapper form,
+    .product-card__form-wrapper add-to-cart-component {
+      display: block;
+      width: 100%;
+      flex: none;
+      margin-left: 0;
+    }
+
+    .product-card__buy-btn {
+      width: 100%;
+      min-width: 0;
+      padding: 10px 12px;
+      font-size: 0.78rem;
+    }
+  }
+
+  /* Fallback for browsers without container query support: behave like before,
+     keyed to viewport width. Remove this whole @supports block once container
+     query support is guaranteed for your traffic. */
+  @supports not (container-type: inline-size) {
+    @media screen and (min-width: 1100px) {
+      .product-card__actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+        row-gap: 8px;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .product-card__qty {
+        margin-right: auto;
+        align-self: auto;
+      }
+
+      .product-card__form-wrapper {
+        flex: 0 0 auto;
+        width: auto;
+        margin-left: auto;
+      }
+
+      .product-card__buy-btn {
+        flex: none;
+        width: auto;
+      }
+    }
+
+    @media screen and (max-width: 1099px) {
+      .product-card__form-wrapper,
+      .product-card__form-wrapper form,
+      .product-card__form-wrapper add-to-cart-component {
+        display: block;
+        width: 100%;
+        flex: none;
+        margin-left: 0;
+      }
+
+      .product-card__buy-btn {
+        width: 100%;
+        min-width: 0;
+        padding: 10px 12px;
+        font-size: 0.78rem;
+      }
+    }
+  }
+
+  /* Hide duplicate price/title blocks that sometimes land inside the gallery */
+  .product-card__gallery [ref="priceContainer"],
+  .product-card__gallery .price__regular,
+  .product-card__gallery .price__sale,
+  .product-card__gallery .product-card__title,
+  .product-card__gallery .product-card__description,
+  .product-card__gallery .product-card__actions {
+    display: none !important;
+  }
+
+  /* ── Info panel ── */
+  .product-card__info.product-grid__card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px 18px !important;
+    min-width: 0;
+    overflow: visible;
+    flex: 1;
+    background: transparent;
+    min-height: 130px;
+  }
+
+  /* Reset any extra padding from child block selectors — container handles it */
+  .product-card__info .product-title,
+  .product-card__info .price,
+  .product-card__info .buy-buttons {
+    padding: 0 !important;
+  }
+
+  @media screen and (max-width: 1099px) {
+    .product-card__info.product-grid__card {
+      padding: 14px 14px 16px !important;
+      gap: 7px;
+      min-height: 145px;
+    }
+  }
+
+  /* ── Title ────────────────────────────────────── */
+  .product-card__title {
+    font-family: var(--font-heading--family);
+    font-size: 1.45rem;
+    font-weight: 600;
+    color: var(--color-brand-dark);
+    margin: 0;
+    line-height: 1.4;
+    letter-spacing: 0.01em;
+    overflow-wrap: break-word;
+    word-break: break-word;
+
+    /* Clamp to 2 lines max */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    transition: color 0.2s ease;
+  }
+
+  @media screen and (max-width: 1099px) {
+    .product-card__title {
+      font-size: 1.05rem;
+      line-height: 1.35;
+      letter-spacing: 0;
+      -webkit-line-clamp: 2;
+    }
+  }
+
+  .product-card:hover .product-card__title {
+    color: var(--color-brand-mahogany);
+  }
+
+  /* ── Description (hidden) ─────────────────────── */
+  .product-card__description {
+    display: none !important;
+  }
+
+  /* ── Price ────────────────────────────────────── */
+  .product-card__price {
+    font-family: var(--font-body--family);
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .product-card__compare-price {
+    order: 2;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--color-text-light);
+    text-decoration: line-through;
+    white-space: nowrap;
+    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .product-card__current-price {
+    order: 1;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--color-brand-dark);
+    white-space: nowrap;
+    flex-shrink: 0;
+    letter-spacing: -0.01em;
+  }
+
+  /* Elegant red for the price once a discount is applied */
+  .product-card__current-price--sale {
+    color: #e53935;
+  }
+
+  /* ── Buy button ───────────────────────────────── */
+  .product-card__buy-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    flex-shrink: 0;
+    width: auto;
+    min-width: 120px;
+    padding: 11px 28px;
+    background: var(--color-brand-dark);
+    color: #ffffff;
+    --loader-color: #ffffff !important;
+    border: none;
+    border-radius: 30px;
+    font-family: var(--font-body--family);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.25s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 8px rgb(var(--color-brand-dark-rgb) / 0.12);
+    white-space: nowrap;
+  }
+
+  .product-card__form-wrapper,
+  .product-card__form-wrapper form,
+  .product-card__form-wrapper add-to-cart-component {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    position: relative;
+    z-index: 10;
+    pointer-events: all;
+    justify-content: center;
+  }
+
+  /* ── Tablet range (650px–1099px) ──────────────── */
+  /* Placed after the generic max-width:1099px rules above (info panel
+     padding, title size, price size) so these tablet-specific values
+     actually win the cascade instead of being silently overridden — both
+     blocks share the same selector specificity, so source order decides. */
+  @media screen and (min-width: 650px) and (max-width: 1099px) {
+    .product-card__info.product-grid__card {
+      padding: 18px 20px 22px !important;
+      gap: 12px;
+      min-height: 170px;
+    }
+
+    .product-card__title {
+      font-size: 1.2rem;
+      line-height: 1.45;
+      -webkit-line-clamp: 2;
+    }
+
+    .product-card__price {
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .product-card__current-price {
+      font-size: 1.15rem;
+    }
+
+    .product-card__compare-price {
+      font-size: 0.82rem;
+    }
+
+    .product-card__qty .product-card__qty-selector {
+      min-width: 110px;
+      height: 44px;
+    }
+  }
+
+  @media screen and (max-width: 1099px) {
+    .product-card__price {
+      flex-wrap: wrap;
+      row-gap: 2px;
+    }
+
+    .product-card__current-price {
+      font-size: 1rem;
+    }
+
+    .product-card__compare-price {
+      font-size: 0.72rem;
+    }
+  }
+
+  @media screen and (max-width: 749px) {
+    .product-card__info.product-grid__card {
+      padding: 12px 12px 16px !important;
+      gap: 6px;
+      min-height: 150px;
+    }
+
+    .product-card__title {
+      font-size: 1rem;
+      line-height: 1.35;
+    }
+
+    .product-card__current-price {
+      font-size: 1rem;
+    }
+
+    .product-card__compare-price {
+      font-size: 0.72rem;
+    }
+
+    /* ── Mobile Product Card Actions: Side-by-Side Row ── */
+    .product-card__actions {
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 6px !important;
+      width: 100% !important;
+      margin-top: auto !important;
+      flex-wrap: nowrap !important;
+      box-sizing: border-box !important;
+    }
+
+    /* Quantity stepper on the LEFT */
+    .product-card__qty {
+      order: 1 !important;
+      margin: 0 !important;
+      flex: 0 0 auto !important;
+      display: inline-flex !important;
+      align-self: center !important;
+    }
+
+    .product-card__qty .product-card__qty-selector {
+      min-width: 86px !important;
+      height: 38px !important;
+      padding: 2px 3px !important;
+      gap: 1px !important;
+    }
+
+    .product-card__qty .product-card__qty-selector :is(.quantity-minus, .quantity-plus) {
+      width: 30px !important;
+      height: 30px !important;
+      min-width: 30px !important;
+      min-height: 30px !important;
+    }
+
+    .product-card__qty .product-card__qty-selector input[type='number'] {
+      width: 22px !important;
+      min-width: 16px !important;
+      max-width: 26px !important;
+      font-size: 0.82rem !important;
+    }
+
+    /* Form wrapper & Add-to-cart Icon Button on the RIGHT */
+    .product-card__form-wrapper {
+      order: 2 !important;
+      display: flex !important;
+      flex: 0 0 auto !important;
+      width: auto !important;
+      margin: 0 !important;
+      justify-content: flex-end !important;
+    }
+
+    .product-card__form-wrapper form,
+    .product-card__form-wrapper add-to-cart-component {
+      display: flex !important;
+      width: auto !important;
+      margin: 0 !important;
+    }
+
+    /* Circular Icon-Only Add to Cart button on mobile */
+    .product-card__buy-btn {
+      width: 38px !important;
+      height: 38px !important;
+      min-width: 38px !important;
+      max-width: 38px !important;
+      border-radius: 50% !important;
+      padding: 0 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      box-shadow: 0 2px 8px rgb(var(--color-brand-dark-rgb) / 0.15) !important;
+      flex: 0 0 auto !important;
+      margin: 0 !important;
+      --loader-color: #ffffff !important;
+    }
+
+    .product-card__buy-btn .add-to-cart-text__content {
+      display: none !important;
+    }
+
+    .product-card__buy-btn .add-to-cart-icon {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 18px !important;
+      height: 18px !important;
+    }
+
+    .product-card__buy-btn .add-to-cart-icon svg {
+      width: 18px !important;
+      height: 18px !important;
+      display: block !important;
+    }
+  }
+
+  .product-card__buy-btn:hover {
+    background: var(--color-brand-burgundy);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgb(var(--color-brand-dark-rgb) / 0.2);
+  }
+
+  /* ── Sale badge (from theme) ──────────────────── */
+  .product-card__badge--sale {
+    display: inline-block;
+    background: var(--color-brand-mahogany);
+    color: #ffffff;
+    font-family: var(--font-body--family);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+
+  /* Hide default Sale / Sold out product badges sitewide on cards */
+  .product-badges,
+  .product-card .product-badges,
+  .rec-card .product-badges,
+  .product-badges__badge {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+  }
+{% endstylesheet %}

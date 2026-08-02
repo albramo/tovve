@@ -1,0 +1,9 @@
+models:
+  - name: DeepSeek V4 Flash
+    provider: openai
+    model: deepseek-v4-flash-bynara
+    apiBase: https://router.bynara.id/v1
+    apiKey: sk-nry-ELVx40eOwTqUV0vSup7AWK8QVmqIe6p-7V-MnDHmfho
+
+
+    

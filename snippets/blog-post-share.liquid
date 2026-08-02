@@ -1,0 +1,59 @@
+{%- doc -%}
+  Renders social share buttons for a blog article.
+
+  @param {object} article - The article object
+{%- enddoc -%}
+
+{%- liquid
+  if canonical_url != blank
+    assign share_url = canonical_url
+  else
+    assign share_url = request.origin | append: article.url
+  endif
+
+  assign share_title = article.title | url_encode
+  assign share_url_encoded = share_url | url_encode
+
+  assign facebook_url = 'https://www.facebook.com/sharer/sharer.php?u=' | append: share_url_encoded
+  assign whatsapp_url = 'https://wa.me/?text=' | append: share_title | append: '%20' | append: share_url_encoded
+  assign x_url = 'https://twitter.com/intent/tweet?url=' | append: share_url_encoded | append: '&text=' | append: share_title
+-%}
+
+<div class="blog-post-share">
+  <span class="blog-post-share__label">Share</span>
+  <div class="blog-post-share__buttons">
+    <a
+      href="{{ facebook_url }}"
+      class="blog-post-share__button blog-post-share__button--facebook"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Share on Facebook"
+    >
+      <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+        {% render 'icon', icon: 'facebook' %}
+      </svg>
+    </a>
+    <a
+      href="{{ whatsapp_url }}"
+      class="blog-post-share__button blog-post-share__button--whatsapp"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Share on WhatsApp"
+    >
+      <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+        {% render 'icon', icon: 'whatsapp' %}
+      </svg>
+    </a>
+    <a
+      href="{{ x_url }}"
+      class="blog-post-share__button blog-post-share__button--x"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Share on X"
+    >
+      <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+        {% render 'icon', icon: 'twitter' %}
+      </svg>
+    </a>
+  </div>
+</div>

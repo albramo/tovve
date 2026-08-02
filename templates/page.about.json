@@ -1,0 +1,30 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */{
+  "sections": {
+    "main": {
+      "type": "tovee-page",
+      "settings": {
+        "show_banner": true,
+        "eyebrow": "Our Story",
+        "title": "About Tovee",
+        "subtitle": "Premium plant-powered skincare crafted to reveal your natural glow.",
+        "content": "<p>Tovee was born from a simple belief: your skin deserves the very best of nature — without compromise. We craft clean, plant-powered formulas that nourish, restore, and help you glow from within.</p><h2>Our Philosophy</h2><p>Every Tovee product is thoughtfully formulated with carefully selected botanical ingredients. We believe in transparency, sustainability, and results you can see and feel.</p><h2>Clean Ingredients</h2><p>We say no to harsh chemicals and yes to nature's finest. Our skincare is designed for all skin types, with formulas that are gentle yet effective.</p><h2>Our Promise</h2><ul><li>Plant-powered, clean ingredients</li><li>Cruelty-free — never tested on animals</li><li>Thoughtfully crafted for everyday radiance</li><li>Honest formulas you can trust</li></ul>",
+        "button_label": "Shop Skincare",
+        "button_link": "shopify://collections/all",
+        "background_color": "#FCFAF8",
+        "padding-block-start": 0,
+        "padding-block-end": 0
+      }
+    }
+  },
+  "order": [
+    "main"
+  ]
+}

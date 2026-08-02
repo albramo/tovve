@@ -1,0 +1,25 @@
+{% comment %}
+  Renders a skeleton loader for the cart list items to prevent layout shifts during updates.
+{% endcomment %}
+
+<div class="cart-items-skeleton">
+  {% for i in (1..3) %}
+    <div class="cart-item-skeleton">
+      <!-- Media/Image Skeleton -->
+      <div class="cart-item-skeleton__media skeleton-shimmer"></div>
+
+      <!-- Details Skeleton -->
+      <div class="cart-item-skeleton__details">
+        <div class="cart-item-skeleton__title skeleton-shimmer"></div>
+        <div class="cart-item-skeleton__variant skeleton-shimmer"></div>
+        <div class="cart-item-skeleton__price skeleton-shimmer"></div>
+      </div>
+
+      <!-- Quantity Skeleton -->
+      <div class="cart-item-skeleton__quantity skeleton-shimmer"></div>
+
+      <!-- Total Price Skeleton -->
+      <div class="cart-item-skeleton__total skeleton-shimmer"></div>
+    </div>
+  {% endfor %}
+</div>

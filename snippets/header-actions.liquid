@@ -1,0 +1,589 @@
+{% doc %}
+  Header Actions Component
+
+  Renders the header actions.
+
+  @param {object} [section] - The section object providing settings such as actions_font.
+  @param {block} [block] - The block object, used for Shopify editor attributes.
+  @param {string} [display_style] - Controls display mode for header actions: 'icon' or 'text'.
+  @param {string} [customer_account_menu] - The menu handle passed to the shopify-account component.
+
+  @example
+  {% render 'header-actions', section: section %}
+{% enddoc %}
+
+<script
+  type="module"
+  src="{{ 'cart-icon.js' | asset_url }}"
+  fetchpriority="low"
+></script>
+
+{% capture cart_icon %}
+  <cart-icon
+    class="header-actions__cart-icon{% if display_style == 'text' %} header-actions__cart-icon--text{% endif %}{% unless cart == empty %} header-actions__cart-icon--has-cart{% endunless %}"
+    data-testid="cart-icon"
+  >
+    <span class="{% if display_style == 'icon' %}hidden{% else %}mobile:hidden{% endif %}">
+      {{ 'content.cart_title' | t }}
+    </span>
+
+    <span
+      class="svg-wrapper {% if display_style != 'icon' %}desktop:hidden{% endif %}"
+      aria-hidden="true"
+    >
+      {{ 'icon-cart.svg' | inline_asset_content }}
+    </span>
+
+    {% render 'cart-bubble', limit: 100 %}
+  </cart-icon>
+{% endcapture %}
+
+{% capture account_icon %}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="15"
+    height="17"
+    viewBox="0 0 15 17"
+    fill="none"
+    slot="signed-out-avatar"
+    class="account-button__icon"
+  >
+    <path
+      stroke="currentColor"
+      stroke-linejoin="round"
+      stroke-width="var(--icon-stroke-width)"
+      d="M10.375 3.813a3.063 3.063 0 1 1-6.125 0 3.063 3.063 0 0 1 6.125 0ZM7.313 9.5c-3.667 0-6.24 2.691-6.563 6.125h13.125C13.552 12.191 10.979 9.5 7.312 9.5Z"
+    />
+  </svg>
+{% endcapture %}
+
+<header-actions
+  {% if display_style == 'text' %}
+    class="header-actions--text"
+  {% endif %}
+  {{- block.shopify_attributes -}}
+>
+  {% if shop.customer_accounts_enabled %}
+    {% liquid
+      assign account_actions_style = ''
+      if display_style == 'text' and section
+        assign actions_font = section.settings.actions_font | default: 'body'
+        assign font_obj = settings.type_heading_font
+        case actions_font
+          when 'body'
+            assign font_obj = settings.type_body_font
+          when 'subheading'
+            assign font_obj = settings.type_subheading_font
+          when 'accent'
+            assign font_obj = settings.type_accent_font
+        endcase
+        assign font_family = font_obj.family | append: ', ' | append: font_obj.fallback_families
+        assign font_family_safe = font_family | replace: '"', "'"
+        assign account_actions_style = '--header-actions-font-family: ' | append: font_family_safe | append: '; --header-actions-font-weight: ' | append: font_obj.weight | append: ';'
+      endif
+    %}
+    <div
+      class="account-button header-actions__action{% if display_style == 'text' %} account-button--text{% endif %} color-custom-popover"
+    >
+      <shopify-account
+        menu="{{ customer_account_menu }}"
+        {% if account_actions_style != blank %}
+          style="{{ account_actions_style }}"
+        {% endif %}
+      >
+        {% if customer %}
+          <div class="account-button__fallback"></div>
+        {% else %}
+          <span
+            slot="signed-out-avatar"
+            class="account-button__text header-actions__text-style {% if display_style == 'icon' %}hidden{% else %}mobile:hidden{% endif %}"
+          >
+            {{ 'content.account_title' | t }}
+          </span>
+
+          <span
+            slot="signed-out-avatar"
+            class="{% if display_style != 'icon' %}desktop:hidden{% endif %}"
+            aria-hidden="true"
+          >
+            {{ account_icon }}
+          </span>
+        {% endif %}
+      </shopify-account>
+    </div>
+  {% endif %}
+
+  {% if section.settings.show_search %}
+    <div class="header-actions__search">
+      {% render 'search', style: 'modal', class: 'search-action--in-actions', display_style: 'icon' %}
+    </div>
+  {% endif %}
+
+  {% if settings.cart_type == 'drawer' and template.name != 'cart' %}
+    <button
+      class="header-actions__action button-unstyled{% if display_style == 'text' %} header-actions__text-style{% endif %}"
+      on:click="#cart-drawer/toggle"
+      aria-haspopup="dialog"
+      aria-expanded="false"
+      aria-controls="cart-drawer"
+      aria-label="{{ 'accessibility.cart' | t }}"
+      aria-describedby="cart-bubble-text"
+      data-testid="cart-drawer-trigger"
+    >
+      {{ cart_icon }}
+    </button>
+  {% else %}
+    <a
+      href="{{ routes.cart_url }}"
+      class="header-actions__action action__cart{% if display_style == 'text' %} header-actions__text-style{% endif %}"
+      aria-label="{{ 'accessibility.cart' | t }}"
+      aria-describedby="cart-bubble-text"
+    >
+      {{ cart_icon }}
+    </a>
+  {% endif %}
+
+  {% if localization.available_languages.size > 1 %}
+    {%- form 'localization', id: 'HeaderLangForm', class: 'tovee-lang' -%}
+      <div class="tovee-lang__wrapper" data-testid="language-selector">
+        <button
+          type="button"
+          class="tovee-lang__button"
+          aria-label="{{ 'content.language' | t }}"
+          aria-expanded="false"
+          aria-haspopup="listbox"
+          ref="langButton"
+          onclick="event.stopPropagation(); this.closest('.tovee-lang__wrapper').classList.toggle('is-open')"
+        >
+          <span class="tovee-lang__current">
+            <span class="desktop:hidden">
+              {{ localization.language.iso_code | upcase }}
+            </span>
+            <span class="mobile:hidden">
+              {%- if localization.language.iso_code == 'ar' -%}
+                العربية
+              {%- elsif localization.language.iso_code == 'en' -%}
+                English
+              {%- else -%}
+                {{ localization.language.endonym_name | capitalize }}
+              {%- endif -%}
+            </span>
+          </span>
+          <span class="tovee-lang__caret" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 10 6" fill="none">
+              <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </button>
+        <div class="tovee-lang__dropdown" role="listbox" aria-label="{{ 'content.language' | t }}">
+          {%- for language in localization.available_languages -%}
+            {%- liquid
+              assign lang_display_name = language.endonym_name | capitalize
+              if language.iso_code == 'ar'
+                assign lang_display_name = 'العربية'
+              elsif language.iso_code == 'en'
+                assign lang_display_name = 'English'
+              endif
+            -%}
+            <button
+              type="submit"
+              name="language_code"
+              value="{{ language.iso_code }}"
+              class="tovee-lang__option{% if language.iso_code == localization.language.iso_code %} is-active{% endif %}"
+              role="option"
+              aria-selected="{% if language.iso_code == localization.language.iso_code %}true{% else %}false{% endif %}"
+              lang="{{ language.iso_code }}"
+            >
+              <span class="tovee-lang__option-code">{{ lang_display_name }}</span>
+            </button>
+          {%- endfor -%}
+        </div>
+      </div>
+    {%- endform -%}
+  {% endif %}
+
+</header-actions>
+
+<script>
+  (function() {
+    function closeLanguageSelector(e) {
+      var wrapper = document.querySelector('.tovee-lang__wrapper');
+      if (wrapper && !wrapper.contains(e.target)) {
+        wrapper.classList.remove('is-open');
+      }
+    }
+
+    document.addEventListener('click', closeLanguageSelector);
+    
+    document.addEventListener('tovee-close-all-menus', function() {
+      var wrapper = document.querySelector('.tovee-lang__wrapper');
+      if (wrapper) {
+        wrapper.classList.remove('is-open');
+      }
+    });
+  })();
+</script>
+
+{% stylesheet %}
+  .header {
+    --account-offset-top: calc(
+      var(--header-group-height) + (var(--header-height) * var(--transparent-header-offset-boolean))
+    );
+
+    &[data-sticky-state='active'] {
+      --account-offset-top: calc(var(--header-height) - 1px);
+    }
+  }
+
+  .account-button {
+    /* Remove the background color from the color scheme, we want to inherit the color of the header */
+    background: transparent;
+  }
+
+  .account-button__icon,
+  .account-button__text {
+    color: var(--color-account-icon);
+    transition: color var(--header-content-transition-timing);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  shopify-account {
+    --shopify-account-font-heading: var(--font-heading--family);
+    --shopify-account-font-heading-weight: var(--font-heading--weight);
+    --shopify-account-font-body: var(--font-body--family);
+    --shopify-account-font-body-weight: var(--font-body--weight);
+    --shopify-account-radius-base: var(--style-border-radius-popover);
+    --shopify-account-radius-button: var(--style-border-radius-buttons-primary);
+    --shopify-account-radius-button-small: var(--style-border-radius-buttons-primary);
+    --shopify-account-radius-input: var(--style-border-radius-buttons-primary);
+    --shopify-account-color-background: var(--color-background);
+    --shopify-account-color-text: var(--color-foreground);
+    --shopify-account-color-accent: var(--color-primary-button-background);
+    --shopify-account-color-accent-text: var(--color-primary-button-text);
+    --shopify-account-dialog-position-top: var(--account-offset-top);
+
+    &:not(:defined) {
+      min-width: 44px;
+      height: 44px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      /* Match the line height of the other buttons */
+      line-height: normal;
+    }
+  }
+
+  .account-button__fallback {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: var(--shopify-account-color-accent, #0a142f);
+  }
+
+  .account-button--text shopify-account {
+    color: inherit;
+  }
+
+  .cart-actions summary {
+    padding-inline: 0;
+    padding-block: var(--padding-sm);
+    line-height: 1.2;
+    min-height: var(--minimum-touch-target);
+  }
+
+  header-actions {
+    display: flex;
+    align-items: center;
+
+    @media screen and (max-width: 749px) {
+      justify-self: flex-end;
+      gap: 1px;
+    }
+  }
+
+  .header-actions__search {
+    display: none;
+  }
+
+  @media screen and (max-width: 749px) {
+    .header-actions__search {
+      display: flex !important;
+      align-items: center;
+      margin-inline-end: 1px;
+    }
+
+    .header-actions__search .search-action {
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+    }
+
+    cart-icon.header-actions__cart-icon > span:not(.svg-wrapper) {
+      display: none !important;
+    }
+
+    cart-icon.header-actions__cart-icon .svg-wrapper {
+      display: flex !important;
+    }
+
+    .header-actions__action .svg-wrapper,
+    .header-actions__search .header-actions__action {
+      min-width: 32px;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header-actions__action svg,
+    .header-actions__search .header-actions__action svg {
+      width: 20px;
+      height: 20px;
+      stroke-width: 1.15px;
+    }
+  }
+
+  @media screen and (min-width: 750px) {
+    .header-actions--text {
+      gap: var(--gap-xl);
+    }
+
+    .header-actions__text-style {
+      font-size: var(--header-actions-font-size);
+      font-family: var(--header-actions-font-family);
+      font-weight: var(--header-actions-font-weight);
+      text-transform: var(--header-actions-text-case);
+    }
+  }
+
+  #header-component[data-menu-style='drawer'] header-actions {
+    justify-self: flex-end;
+  }
+
+  .header__column--right header-actions {
+    margin-inline-start: calc(var(--gap-md) * -1);
+  }
+
+  .header-actions__cart-icon {
+    --cart-bubble-size: 16px;
+    --cart-bubble-top: 1px;
+    --cart-bubble-right: 3px;
+
+    position: relative;
+  }
+
+  .header-actions__cart-icon .cart-bubble {
+    position: absolute;
+    width: var(--cart-bubble-size, 16px);
+    height: var(--cart-bubble-size, 16px);
+    top: var(--cart-bubble-top);
+    right: var(--cart-bubble-right);
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px !important;
+    border-radius: 50% !important;
+    background-color: #2e0808 !important;
+    color: #ffffff !important;
+  }
+
+  @media screen and (min-width: 750px) {
+    .header-actions__cart-icon--text.header-actions__cart-icon .cart-bubble {
+      position: relative;
+      top: 0;
+    }
+  }
+
+  .header-actions__cart-icon .cart-bubble__text {
+    font-family: var(--font-paragraph--family);
+    font-weight: var(--font-paragraph--weight);
+  }
+
+  .header-actions__cart-icon.header-actions__cart-icon--has-cart svg {
+    mask: none !important; /* Cancel the cutout mask to keep the cart icon complete and beautiful */
+  }
+
+  .cart-bubble.cart-bubble--animating .cart-bubble__background {
+    animation: grow var(--animation-speed) var(--animation-easing);
+  }
+
+  .cart-bubble--animating .cart-bubble__text {
+    --start-y: -1em;
+    --start-opacity: 1;
+    /* Set initial transform state before animation starts */
+    transform: translate(0, var(--start-y, -1em));
+    opacity: var(--start-opacity, 1);
+    animation: move-and-fade var(--animation-speed) var(--animation-easing);
+  }
+
+  cart-icon:has(.cart-bubble__text-count:empty) {
+    --cart-bubble-size: 8px;
+    --cart-bubble-top: 1px;
+    --cart-bubble-right: 1px;
+
+    .svg-wrapper {
+      --cart-bubble-top: 1px;
+      --cart-bubble-right: 1px;
+    }
+  }
+
+  @media screen and (min-width: 750px) {
+    cart-icon.header-actions__cart-icon--text:has(.cart-bubble__text-count:empty) {
+      --cart-bubble-right: 2.5px;
+    }
+  }
+
+  .header-actions__text {
+    display: flex;
+    align-items: center;
+  }
+
+  @media screen and (min-width: 750px) {
+    .header-actions__cart-icon--text {
+      display: flex;
+      align-items: center;
+      gap: var(--gap-xs);
+    }
+
+    .header__column--right .header-actions--text {
+      margin-inline-start: 0;
+    }
+  }
+
+  /* ── TOVEE Language Selector (Desktop & Mobile) ───────── */
+  .tovee-lang {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+  }
+
+  .tovee-lang__wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .tovee-lang__button {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--font-body--family);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    color: var(--color-foreground);
+    padding: 6px 10px;
+    min-height: 40px;
+    cursor: pointer;
+    line-height: 1;
+    transition: opacity 0.2s ease, background-color 0.2s ease;
+    border-radius: 0;
+
+    @media screen and (max-width: 749px) {
+      padding: 4px 4px;
+      font-size: 0.72rem;
+    }
+  }
+
+  .tovee-lang__button:hover {
+    background: rgba(46, 8, 8, 0.04);
+  }
+
+  .tovee-lang__button:active,
+  .tovee-lang__wrapper.is-open .tovee-lang__button {
+    background: rgba(46, 8, 8, 0.06);
+  }
+
+  .tovee-lang__current {
+    pointer-events: none;
+  }
+
+  .tovee-lang__caret {
+    pointer-events: none;
+    color: var(--color-foreground);
+    display: flex;
+    align-items: center;
+    opacity: 0.5;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .tovee-lang__wrapper.is-open .tovee-lang__caret {
+    transform: rotate(180deg);
+  }
+
+  /* Custom Dropdown Panel - Sharp square floating popover */
+  .tovee-lang__dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 120px;
+    background: #ffffff;
+    border: 1px solid rgba(46, 8, 8, 0.12);
+    border-radius: 0;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    padding: 4px 0;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px);
+    transform-origin: top right;
+    transition: 
+      opacity 0.18s ease,
+      visibility 0.18s,
+      transform 0.18s ease;
+    z-index: 1000;
+  }
+
+  .tovee-lang__wrapper.is-open .tovee-lang__dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .tovee-lang__option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 10px 18px;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--font-body--family);
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    color: var(--color-foreground);
+    cursor: pointer;
+    border-radius: 0;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    text-align: center;
+  }
+
+  .tovee-lang__option:hover {
+    background: rgba(46, 8, 8, 0.04);
+    color: var(--color-brand-mahogany, #2e0808);
+  }
+
+  /* Active selected language: text only in Burgundy, no solid background fill */
+  .tovee-lang__option.is-active {
+    background: transparent;
+    color: var(--color-brand-mahogany, #2e0808);
+    font-weight: 700;
+  }
+
+  .tovee-lang__option + .tovee-lang__option {
+    margin-top: 1px;
+  }
+
+  .tovee-lang__option-code {
+    pointer-events: none;
+  }
+
+
+{% endstylesheet %}

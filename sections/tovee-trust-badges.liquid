@@ -1,0 +1,315 @@
+<div
+  class="tovee-trust section section--page-width spacing-style tovee-reveal-on-scroll"
+  style="
+    --tovee-trust-bg: {{ section.settings.background_color }};
+    --tovee-trust-text: {{ section.settings.text_color }};
+    --tovee-trust-muted: {{ section.settings.muted_color }};
+    --tovee-trust-accent: {{ section.settings.accent_color }};
+    --padding-block-start: {{ section.settings.padding_top }}px;
+    --padding-block-end: {{ section.settings.padding_bottom }}px;
+    background-color: var(--tovee-trust-bg);
+    width: 100%;
+    overflow: hidden;
+  "
+>
+  <div class="tovee-trust__inner page-width" style="max-width: 1200px; margin: 0 auto; padding: 0 10px;">
+    <ul class="tovee-trust__grid" role="list" style="display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; justify-content: space-between !important; align-items: center !important; list-style: none !important; margin: 0 !important; padding: 0 !important; width: 100% !important;">
+      {% for block in section.blocks %}
+        <li class="tovee-trust__item" {{ block.shopify_attributes }} style="flex: 1 1 33.333% !important; max-width: 33.333% !important; display: flex !important; flex-direction: column !important; align-items: center !important; text-align: center !important; padding: 0 4px !important; position: relative !important; box-sizing: border-box !important;">
+          
+          <div class="tovee-trust__icon-wrap" aria-hidden="true">
+            {% if block.settings.image != blank %}
+              <img
+                src="{{ block.settings.image | image_url: width: 120 }}"
+                alt="{{ block.settings.title | escape }}"
+                loading="lazy"
+                width="40"
+                height="40"
+                class="tovee-trust__custom-img"
+              >
+            {% else %}
+              {% case block.settings.icon %}
+                {% when 'leaf' %}
+                  <svg class="tovee-trust__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22C12 22 4 16 4 10C4 6 7 3 12 3C17 3 20 6 20 10C20 16 12 22 12 22Z"/>
+                    <path d="M12 22V12"/>
+                    <path d="M8 10C10 8 14 8 16 10"/>
+                  </svg>
+                {% when 'location' %}
+                  <svg class="tovee-trust__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11Z"/>
+                    <circle cx="12" cy="10" r="2.5"/>
+                  </svg>
+                {% when 'beaker' %}
+                  <svg class="tovee-trust__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 3h6"/>
+                    <path d="M10 3v6.5L4.5 18.5A2 2 0 0 0 6.3 21.5h11.4a2 2 0 0 0 1.8-3L14 9.5V3"/>
+                    <path d="M8 14h8"/>
+                    <path d="M9 17h6"/>
+                  </svg>
+                {% when 'shield' %}
+                  <svg class="tovee-trust__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <path d="M9 12l2 2 4-4"/>
+                  </svg>
+                {% when 'droplet' %}
+                  <svg class="tovee-trust__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22a7 7 0 0 0 7-7c0-4.3-7-11-7-11S5 10.7 5 15a7 7 0 0 0 7 7z"/>
+                  </svg>
+              {% endcase %}
+            {% endif %}
+          </div>
+
+          {% if block.settings.title != blank %}
+            <h3 class="tovee-trust__title" style="display: block !important; width: 100% !important; margin: 0 0 3px 0 !important; color: var(--tovee-trust-text) !important;">
+              {{ block.settings.title }}
+            </h3>
+          {% endif %}
+
+          {% if block.settings.text != blank %}
+            <p class="tovee-trust__text" style="display: block !important; width: 100% !important; margin: 0 auto !important; color: var(--tovee-trust-muted) !important;">
+              {{ block.settings.text }}
+            </p>
+          {% endif %}
+
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+{% stylesheet %}
+  .tovee-trust {
+    padding-top: var(--padding-block-start);
+    padding-bottom: var(--padding-block-end);
+    border-top: 1px solid rgba(46, 8, 8, 0.08);
+    border-bottom: 1px solid rgba(46, 8, 8, 0.08);
+  }
+
+  .tovee-trust__item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 52px;
+    background: rgba(46, 8, 8, 0.15);
+  }
+
+  .tovee-trust__icon-wrap {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 68px !important;
+    height: 68px !important;
+    border-radius: 50%;
+    border: 1.5px solid rgba(109, 42, 42, 0.25) !important;
+    background: #ffffff !important;
+    color: var(--tovee-trust-accent) !important;
+    margin-bottom: 12px !important;
+    flex-shrink: 0;
+    box-shadow: 0 4px 14px rgba(109, 42, 42, 0.1) !important;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  }
+
+  .tovee-trust__item:hover .tovee-trust__icon-wrap {
+    transform: translateY(-3px);
+    border-color: rgba(109, 42, 42, 0.45) !important;
+    box-shadow: 0 6px 20px rgba(109, 42, 42, 0.18) !important;
+  }
+
+  .tovee-trust__custom-img {
+    width: 40px !important;
+    height: 40px !important;
+    object-fit: contain;
+  }
+
+  .tovee-trust__icon {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .tovee-trust__title {
+    font-size: 0.98rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.05em !important;
+    text-transform: uppercase !important;
+    line-height: 1.25 !important;
+  }
+
+  .tovee-trust__text {
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
+    line-height: 1.35 !important;
+    opacity: 0.92 !important;
+  }
+
+  @media screen and (max-width: 749px) {
+    .tovee-trust {
+      padding-top: max(18px, calc(var(--padding-block-start) * 0.5));
+      padding-bottom: max(18px, calc(var(--padding-block-end) * 0.5));
+    }
+
+    .tovee-trust__icon-wrap {
+      width: 48px !important;
+      height: 48px !important;
+      margin-bottom: 6px !important;
+      border-width: 1.5px !important;
+    }
+
+    .tovee-trust__custom-img {
+      width: 28px !important;
+      height: 28px !important;
+    }
+
+    .tovee-trust__icon {
+      width: 22px !important;
+      height: 22px !important;
+    }
+
+    .tovee-trust__title {
+      font-size: 0.65rem !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.01em !important;
+      margin-bottom: 2px !important;
+    }
+
+    .tovee-trust__text {
+      font-size: 0.55rem !important;
+      font-weight: 500 !important;
+      letter-spacing: 0.01em !important;
+      line-height: 1.2 !important;
+    }
+
+    .tovee-trust__item:not(:last-child)::after {
+      height: 32px;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Tovee Trust Badges",
+  "tag": "section",
+  "class": "tovee-trust-section",
+  "max_blocks": 4,
+  "settings": [
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background",
+      "default": "#FAF8F6"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Title color",
+      "default": "#2e0808"
+    },
+    {
+      "type": "color",
+      "id": "muted_color",
+      "label": "Description color",
+      "default": "#6d2a2a"
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "Icon color",
+      "default": "#6d2a2a"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Padding top",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 32
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Padding bottom",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 32
+    }
+  ],
+  "blocks": [
+    {
+      "type": "badge",
+      "name": "Badge",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Custom Icon Image"
+        },
+        {
+          "type": "select",
+          "id": "icon",
+          "label": "Vector Icon (Fallback)",
+          "options": [
+            { "value": "leaf", "label": "Leaf" },
+            { "value": "location", "label": "Location" },
+            { "value": "beaker", "label": "Beaker" },
+            { "value": "shield", "label": "Shield" },
+            { "value": "droplet", "label": "Droplet" }
+          ],
+          "default": "leaf"
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Title",
+          "default": "Made in Egypt"
+        },
+        {
+          "type": "text",
+          "id": "text",
+          "label": "Description",
+          "default": "PROUDLY MADE LOCALLY"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Tovee Trust Badges",
+      "blocks": [
+        {
+          "type": "badge",
+          "settings": {
+            "icon": "location",
+            "title": "Made in Egypt",
+            "text": "PROUDLY MADE LOCALLY"
+          }
+        },
+        {
+          "type": "badge",
+          "settings": {
+            "icon": "beaker",
+            "title": "Science-Driven Formulas",
+            "text": "BACKED BY RESEARCH"
+          }
+        },
+        {
+          "type": "badge",
+          "settings": {
+            "icon": "leaf",
+            "title": "Pure Ingredients",
+            "text": "FOR HEALTHY, BALANCED SKIN"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,433 @@
+{% doc %}
+  @prompt
+    اعملي Collapsible row مكان الوصف انا خفيته حطلي Collapsible row مكانه تمام, المتجر بالانجليزي ي بهيم عملي الكتابه يمين يغي ظبطها انجليزي\
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-collapsible-row-{{ ai_gen_id }} {
+    display: block;
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+  }
+
+  .ai-collapsible-row-item-{{ ai_gen_id }} {
+    border-bottom: {{ block.settings.border_width }}px solid {{ block.settings.border_color }};
+  }
+
+  .ai-collapsible-row-item-{{ ai_gen_id }}:first-child {
+    border-top: {{ block.settings.border_width }}px solid {{ block.settings.border_color }};
+  }
+
+  .ai-collapsible-row-header-{{ ai_gen_id }} {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: {{ block.settings.row_padding }}px 0;
+    cursor: pointer;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    color: {{ block.settings.heading_color }};
+  }
+
+  .ai-collapsible-row-header-{{ ai_gen_id }}:hover {
+    opacity: 0.8;
+  }
+
+  .ai-collapsible-row-title-{{ ai_gen_id }} {
+    font-size: {{ block.settings.heading_size }}px;
+    font-weight: {{ block.settings.heading_weight }};
+    margin: 0;
+    flex-grow: 1;
+  }
+
+  .ai-collapsible-row-icon-{{ ai_gen_id }} {
+    width: {{ block.settings.icon_size }}px;
+    height: {{ block.settings.icon_size }}px;
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+    margin-left: 12px;
+  }
+
+  .ai-collapsible-row-icon-{{ ai_gen_id }} svg {
+    width: 100%;
+    height: 100%;
+    stroke: {{ block.settings.icon_color }};
+  }
+
+  .ai-collapsible-row-header-{{ ai_gen_id }}[aria-expanded="true"] .ai-collapsible-row-icon-{{ ai_gen_id }} {
+    transform: rotate(180deg);
+  }
+
+  .ai-collapsible-row-content-{{ ai_gen_id }} {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+
+  .ai-collapsible-row-content-{{ ai_gen_id }}.active {
+    max-height: 1000px;
+  }
+
+  .ai-collapsible-row-content-inner-{{ ai_gen_id }} {
+    padding: 0 0 {{ block.settings.row_padding }}px 0;
+    color: {{ block.settings.content_color }};
+    font-size: {{ block.settings.content_size }}px;
+    line-height: 1.6;
+  }
+
+  .ai-collapsible-row-content-inner-{{ ai_gen_id }} p {
+    margin: 0 0 12px 0;
+  }
+
+  .ai-collapsible-row-content-inner-{{ ai_gen_id }} p:last-child {
+    margin-bottom: 0;
+  }
+{% endstyle %}
+
+<collapsible-rows-{{ ai_gen_id }} class="ai-collapsible-row-{{ ai_gen_id }}" {{ block.shopify_attributes }}>
+  {% for i in (1..5) %}
+    {% liquid
+      assign row_enabled_key = 'row_' | append: i | append: '_enabled'
+      assign row_title_key = 'row_' | append: i | append: '_title'
+      assign row_content_key = 'row_' | append: i | append: '_content'
+      assign row_open_key = 'row_' | append: i | append: '_open_by_default'
+
+      assign row_enabled = block.settings[row_enabled_key]
+      assign row_title = block.settings[row_title_key]
+      assign row_content = block.settings[row_content_key]
+      assign row_open = block.settings[row_open_key]
+    %}
+
+    {% if row_enabled %}
+      <div class="ai-collapsible-row-item-{{ ai_gen_id }}">
+        <button
+          class="ai-collapsible-row-header-{{ ai_gen_id }}"
+          aria-expanded="{% if row_open %}true{% else %}false{% endif %}"
+          data-row-id="{{ i }}"
+        >
+          <h3 class="ai-collapsible-row-title-{{ ai_gen_id }}">{{ row_title }}</h3>
+          <span class="ai-collapsible-row-icon-{{ ai_gen_id }}">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </span>
+        </button>
+        <div class="ai-collapsible-row-content-{{ ai_gen_id }} {% if row_open %}active{% endif %}">
+          <div class="ai-collapsible-row-content-inner-{{ ai_gen_id }}">
+            {{ row_content }}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  {% endfor %}
+</collapsible-rows-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class CollapsibleRows{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+      }
+
+      connectedCallback() {
+        this.headers = this.querySelectorAll('.ai-collapsible-row-header-{{ ai_gen_id }}');
+        this.setupEventListeners();
+      }
+
+      setupEventListeners() {
+        this.headers.forEach((header) => {
+          header.addEventListener('click', () => {
+            const content = header.nextElementSibling;
+            const isExpanded = header.getAttribute('aria-expanded') === 'true';
+
+            header.setAttribute('aria-expanded', !isExpanded);
+            content.classList.toggle('active');
+          });
+        });
+      }
+    }
+
+    customElements.define('collapsible-rows-{{ ai_gen_id }}', CollapsibleRows{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Collapsible rows",
+  "tag": null,
+  "settings": [
+    {
+      "type": "header",
+      "content": "Row 1"
+    },
+    {
+      "type": "checkbox",
+      "id": "row_1_enabled",
+      "label": "Enable row 1",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "row_1_title",
+      "label": "Title",
+      "default": "Product details"
+    },
+    {
+      "type": "richtext",
+      "id": "row_1_content",
+      "label": "Content",
+      "default": "<p>Add product details here</p>"
+    },
+    {
+      "type": "checkbox",
+      "id": "row_1_open_by_default",
+      "label": "Open by default",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Row 2"
+    },
+    {
+      "type": "checkbox",
+      "id": "row_2_enabled",
+      "label": "Enable row 2",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "row_2_title",
+      "label": "Title",
+      "default": "Shipping and returns"
+    },
+    {
+      "type": "richtext",
+      "id": "row_2_content",
+      "label": "Content",
+      "default": "<p>Add shipping and return information here</p>"
+    },
+    {
+      "type": "checkbox",
+      "id": "row_2_open_by_default",
+      "label": "Open by default",
+      "default": false
+    },
+    {
+      "type": "header",
+      "content": "Row 3"
+    },
+    {
+      "type": "checkbox",
+      "id": "row_3_enabled",
+      "label": "Enable row 3",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "row_3_title",
+      "label": "Title",
+      "default": "Care instructions"
+    },
+    {
+      "type": "richtext",
+      "id": "row_3_content",
+      "label": "Content",
+      "default": "<p>Add care instructions here</p>"
+    },
+    {
+      "type": "checkbox",
+      "id": "row_3_open_by_default",
+      "label": "Open by default",
+      "default": false
+    },
+    {
+      "type": "header",
+      "content": "Row 4"
+    },
+    {
+      "type": "checkbox",
+      "id": "row_4_enabled",
+      "label": "Enable row 4",
+      "default": false
+    },
+    {
+      "type": "text",
+      "id": "row_4_title",
+      "label": "Title",
+      "default": "Materials"
+    },
+    {
+      "type": "richtext",
+      "id": "row_4_content",
+      "label": "Content",
+      "default": "<p>Add material information here</p>"
+    },
+    {
+      "type": "checkbox",
+      "id": "row_4_open_by_default",
+      "label": "Open by default",
+      "default": false
+    },
+    {
+      "type": "header",
+      "content": "Row 5"
+    },
+    {
+      "type": "checkbox",
+      "id": "row_5_enabled",
+      "label": "Enable row 5",
+      "default": false
+    },
+    {
+      "type": "text",
+      "id": "row_5_title",
+      "label": "Title",
+      "default": "Dimensions"
+    },
+    {
+      "type": "richtext",
+      "id": "row_5_content",
+      "label": "Content",
+      "default": "<p>Add dimension information here</p>"
+    },
+    {
+      "type": "checkbox",
+      "id": "row_5_open_by_default",
+      "label": "Open by default",
+      "default": false
+    },
+    {
+      "type": "header",
+      "content": "Style"
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "range",
+      "id": "row_padding",
+      "label": "Row padding",
+      "min": 8,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "border_width",
+      "label": "Border width",
+      "min": 0,
+      "max": 4,
+      "step": 1,
+      "unit": "px",
+      "default": 1
+    },
+    {
+      "type": "color",
+      "id": "border_color",
+      "label": "Border color",
+      "default": "#E7DDDD"
+    },
+    {
+      "type": "header",
+      "content": "Heading"
+    },
+    {
+      "type": "range",
+      "id": "heading_size",
+      "label": "Font size",
+      "min": 12,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "select",
+      "id": "heading_weight",
+      "label": "Font weight",
+      "options": [
+        {
+          "value": "400",
+          "label": "Normal"
+        },
+        {
+          "value": "500",
+          "label": "Medium"
+        },
+        {
+          "value": "600",
+          "label": "Semi bold"
+        },
+        {
+          "value": "700",
+          "label": "Bold"
+        }
+      ],
+      "default": "600"
+    },
+    {
+      "type": "color",
+      "id": "heading_color",
+      "label": "Heading color",
+      "default": "#2E0808"
+    },
+    {
+      "type": "header",
+      "content": "Icon"
+    },
+    {
+      "type": "range",
+      "id": "icon_size",
+      "label": "Icon size",
+      "min": 12,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "color",
+      "id": "icon_color",
+      "label": "Icon color",
+      "default": "#2E0808"
+    },
+    {
+      "type": "header",
+      "content": "Content"
+    },
+    {
+      "type": "range",
+      "id": "content_size",
+      "label": "Font size",
+      "min": 12,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "color",
+      "id": "content_color",
+      "label": "Content color",
+      "default": "#4A3A3A"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Collapsible rows"
+    }
+  ]
+}
+{% endschema %}

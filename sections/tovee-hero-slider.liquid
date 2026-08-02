@@ -1,0 +1,561 @@
+{%- liquid
+  assign first_block = section.blocks.first
+  if first_block and first_block.settings.image != blank
+    assign aspect_ratio = first_block.settings.image.aspect_ratio
+  elsif first_block and first_block.settings.image_url != blank
+    assign aspect_ratio = 1.7778
+  else
+    assign aspect_ratio = 1.7778
+  endif
+-%}
+<div
+  class="tovee-hero-slider section section--full-width disable-section-top-offset{% if section.settings.image_behavior == 'full' %} is-full-image{% endif %}"
+  data-autoplay="{{ section.settings.autoplay }}"
+  data-autoplay-speed="{{ section.settings.autoplay_speed }}"
+  style="--tovee-hero-height: {{ section.settings.slide_height }}vh; --tovee-hero-height-mobile: {{ section.settings.slide_height_mobile }}vh; --tovee-aspect-ratio: {{ aspect_ratio }}; --autoplay-speed: {{ section.settings.autoplay_speed }}s;"
+>
+  <div class="tovee-hero-slider__track" data-slide-count="{{ section.blocks.size }}">
+    {% for block in section.blocks %}
+      {% liquid
+        assign bs = block.settings
+        assign image = bs.image
+        assign image_url = bs.image_url
+        assign mobile_image = bs.mobile_image | default: image
+        assign mobile_image_url = bs.mobile_image_url | default: image_url
+        assign loading = 'lazy'
+        assign fetchpriority = 'low'
+        if forloop.first
+          assign loading = 'eager'
+          assign fetchpriority = 'high'
+        endif
+        assign slide_link = bs.slide_link
+      %}
+      <div
+        class="tovee-hero-slider__slide{% if forloop.first %} is-active{% endif %}"
+        data-slide-index="{{ forloop.index0 }}"
+        {{ block.shopify_attributes }}
+      >
+        {% if slide_link != blank %}
+          <a href="{{ slide_link }}" class="tovee-hero-slider__link" aria-label="Slide link">
+        {% endif %}
+        <div class="tovee-hero-slider__media">
+          {% if image_url != blank %}
+            <picture>
+              {% if mobile_image_url != blank and mobile_image_url != image_url %}
+                <source media="(max-width: 749px)" srcset="{{ mobile_image_url }}">
+              {% endif %}
+              <img
+                src="{{ image_url }}"
+                class="tovee-hero-slider__image"
+                loading="{{ loading }}"
+                {% if fetchpriority == 'high' %}fetchpriority="high"{% endif %}
+                alt=""
+                width="1920"
+                height="1080"
+              >
+            </picture>
+          {% elsif image != blank %}
+            <picture>
+              {% if mobile_image != blank and mobile_image != image %}
+                <source
+                  media="(max-width: 749px)"
+                  srcset="{{ mobile_image | image_url: width: 1200 }}"
+                >
+              {% endif %}
+              {{
+                image
+                | image_url: width: 3840
+                | image_tag:
+                  class: 'tovee-hero-slider__image',
+                  loading: loading,
+                  fetchpriority: fetchpriority,
+                  sizes: '100vw',
+                  widths: '832, 1200, 1600, 1920, 2560, 3840'
+              }}
+            </picture>
+          {% else %}
+            <img
+              src="{{ 'tovee-hero-slide-1.png' | asset_url }}"
+              class="tovee-hero-slider__image"
+              loading="{{ loading }}"
+              {% if fetchpriority == 'high' %}fetchpriority="high"{% endif %}
+              alt=""
+            >
+          {% endif %}
+        </div>
+        {% if slide_link != blank %}
+        </a>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if section.blocks.size > 1 %}
+    <div class="tovee-hero-slider__dots" role="tablist" aria-label="Slide navigation">
+      {% for block in section.blocks %}
+        <button
+          role="tab"
+          class="tovee-hero-slider__dot{% if forloop.first %} is-active{% endif %}"
+          data-slide-index="{{ forloop.index0 }}"
+          aria-label="Go to slide {{ forloop.index }}"
+          aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
+        ></button>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+
+<script type="module">
+  class ToveeHeroSlider {
+    constructor(root) {
+      this.root = root;
+      this.slides = [...root.querySelectorAll('.tovee-hero-slider__slide')];
+      this.dots = [...root.querySelectorAll('.tovee-hero-slider__dot')];
+      this.interval = Number(root.dataset.autoplaySpeed || 5) * 1000;
+      this.autoplay = root.dataset.autoplay === 'true';
+      this.current = 0;
+      this.timer = null;
+      this.isDragging = false;
+
+      if (this.dots.length) {
+        this.dots.forEach((dot, i) => {
+          dot.addEventListener('click', () => this.goTo(i));
+        });
+      }
+
+      if (this.autoplay && this.slides.length > 1 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        this.startAutoplay();
+        this.root.addEventListener('mouseenter', () => this.stopAutoplay());
+        this.root.addEventListener('mouseleave', () => this.startAutoplay());
+        this.root.addEventListener('focusin', () => this.stopAutoplay());
+        this.root.addEventListener('focusout', () => this.startAutoplay());
+      }
+
+      if (this.slides.length > 1) {
+        this.initTouchGestures();
+      }
+    }
+
+    initTouchGestures() {
+      let startX = 0;
+      let startY = 0;
+      const track = this.root.querySelector('.tovee-hero-slider__track') || this.root;
+
+      const handleStart = (e) => {
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        startX = clientX;
+        startY = clientY;
+        this.isDragging = true;
+        this.stopAutoplay();
+      };
+
+      const handleEnd = (e) => {
+        if (!this.isDragging) return;
+        this.isDragging = false;
+
+        const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+        const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+
+        const deltaX = clientX - startX;
+        const deltaY = clientY - startY;
+
+        if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY)) {
+          if (deltaX > 0) {
+            this.prev();
+          } else {
+            this.next();
+          }
+        }
+        this.startAutoplay();
+      };
+
+      track.addEventListener('touchstart', handleStart, { passive: true });
+      track.addEventListener('touchend', handleEnd, { passive: true });
+
+      track.addEventListener('pointerdown', handleStart);
+      track.addEventListener('pointerup', handleEnd);
+      track.addEventListener('pointercancel', () => {
+        this.isDragging = false;
+        this.startAutoplay();
+      });
+      track.querySelectorAll('img').forEach(img => {
+        img.addEventListener('dragstart', (e) => e.preventDefault());
+      });
+    }
+
+    goTo(index) {
+      if (!this.slides.length) return;
+      this.current = (index + this.slides.length) % this.slides.length;
+      this.slides.forEach((slide, i) => slide.classList.toggle('is-active', i === this.current));
+      this.dots.forEach((dot, i) => dot.classList.toggle('is-active', i === this.current));
+      this.dots.forEach((dot, i) => dot.setAttribute('aria-selected', i === this.current));
+
+      // Reset the autoplay timer on each transition to keep it perfectly synchronized with the CSS progress animation!
+      if (this.autoplay && this.timer) {
+        this.startAutoplay();
+      }
+    }
+
+    prev() {
+      this.goTo(this.current - 1);
+    }
+
+    next() {
+      this.goTo(this.current + 1);
+    }
+
+    startAutoplay() {
+      if (!this.autoplay || this.slides.length <= 1) return;
+      this.stopAutoplay();
+      this.timer = window.setInterval(() => this.next(), this.interval);
+    }
+
+    stopAutoplay() {
+      if (this.timer) {
+        window.clearInterval(this.timer);
+        this.timer = null;
+      }
+    }
+  }
+
+  document.querySelectorAll('.tovee-hero-slider').forEach((el) => new ToveeHeroSlider(el));
+</script>
+
+{% stylesheet %}
+  .tovee-hero-slider {
+    position: relative;
+    width: 100%;
+    min-height: var(--tovee-hero-height-mobile, 90vh);
+    overflow: hidden;
+    background-color: #ffffff;
+  }
+
+  .tovee-hero-slider.is-full-image {
+    aspect-ratio: var(--tovee-aspect-ratio, 1.7778);
+    min-height: auto !important;
+    height: auto !important;
+  }
+
+  .tovee-hero-slider.is-full-image .tovee-hero-slider__track {
+    aspect-ratio: var(--tovee-aspect-ratio, 1.7778);
+    min-height: auto !important;
+    height: auto !important;
+  }
+
+  @media screen and (min-width: 750px) {
+    .tovee-hero-slider {
+      min-height: var(--tovee-hero-height, 92vh);
+    }
+  }
+
+  .tovee-hero-slider__track {
+    position: relative;
+    width: 100%;
+    min-height: inherit;
+    touch-action: pan-y;
+  }
+
+  .tovee-hero-slider__slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94), visibility 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    z-index: 1;
+  }
+
+  .tovee-hero-slider__slide.is-active {
+    opacity: 1;
+    visibility: visible;
+    z-index: 2;
+  }
+
+  .tovee-hero-slider__link {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+  }
+
+  .tovee-hero-slider__media {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  .tovee-hero-slider__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center center;
+    display: block;
+  }
+
+  .tovee-hero-slider__overlay {
+    display: none;
+  }
+
+  .tovee-hero-slider__dots {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 100px;
+  }
+
+  .tovee-hero-slider__dot {
+    position: relative;
+    width: 8px;
+    height: 8px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.45);
+    padding: 0;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    outline: none;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  .tovee-hero-slider__dot:hover {
+    background: rgba(255, 255, 255, 0.7);
+  }
+
+  .tovee-hero-slider__dot.is-active {
+    width: 28px;
+    border-radius: 100px;
+    background: transparent !important;
+    border: 1.5px solid #ffffff !important;
+  }
+
+  .tovee-hero-slider__dot.is-active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    border-radius: inherit;
+    background: #ffffff;
+    clip-path: inset(0 100% 0 0); /* Start empty from left */
+    animation: tovee-fill-progress var(--autoplay-speed, 5s) linear forwards;
+    z-index: 1;
+  }
+
+  .tovee-hero-slider:hover .tovee-hero-slider__dot.is-active::before {
+    animation-play-state: paused !important;
+  }
+
+  @keyframes tovee-fill-progress {
+    0% {
+      clip-path: inset(0 100% 0 0);
+    }
+    100% {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+
+  @media screen and (max-width: 749px) {
+    .tovee-hero-slider {
+      min-height: auto;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .is-full-image.tovee-hero-slider {
+      aspect-ratio: auto;
+      height: auto !important;
+    }
+
+    .is-full-image.tovee-hero-slider .tovee-hero-slider__track {
+      aspect-ratio: auto;
+      height: auto !important;
+    }
+
+    .tovee-hero-slider__image {
+      object-fit: cover;
+      object-position: center center;
+    }
+
+    .tovee-hero-slider__track {
+      display: grid;
+      grid-template-areas: 'stack';
+      min-height: auto;
+    }
+
+    .tovee-hero-slider__slide {
+      position: relative;
+      grid-area: stack;
+      inset: auto;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      visibility: hidden;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .tovee-hero-slider__slide.is-active {
+      opacity: 1;
+      visibility: visible;
+      z-index: 2;
+    }
+
+    .tovee-hero-slider__media {
+      position: relative;
+      inset: auto;
+      width: 100%;
+      height: 65vw;
+      flex-shrink: 0;
+    }
+
+    .is-full-image .tovee-hero-slider__media {
+      aspect-ratio: var(--tovee-aspect-ratio, 1.7778) !important;
+      height: auto !important;
+      max-height: none !important;
+    }
+
+    .tovee-hero-slider__link {
+      position: relative;
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .tovee-hero-slider__dots {
+      bottom: 20px;
+      gap: 8px;
+      padding: 5px 10px;
+    }
+
+    .tovee-hero-slider__dot {
+      width: 7px;
+      height: 7px;
+    }
+
+    .tovee-hero-slider__dot.is-active {
+      width: 24px;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Tovee Hero Slider",
+  "tag": "section",
+  "class": "tovee-hero-slider-section",
+  "max_blocks": 6,
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "autoplay",
+      "label": "Autoplay slides",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "autoplay_speed",
+      "label": "Autoplay speed",
+      "min": 3,
+      "max": 10,
+      "step": 1,
+      "unit": "s",
+      "default": 5
+    },
+    {
+      "type": "range",
+      "id": "slide_height",
+      "label": "Slide height (desktop)",
+      "min": 50,
+      "max": 100,
+      "step": 1,
+      "unit": "vh",
+      "default": 92
+    },
+    {
+      "type": "range",
+      "id": "slide_height_mobile",
+      "label": "Slide height (mobile)",
+      "min": 50,
+      "max": 100,
+      "step": 1,
+      "unit": "vh",
+      "default": 90
+    },
+    {
+      "type": "select",
+      "id": "image_behavior",
+      "label": "Image display behavior",
+      "options": [
+        {
+          "value": "full",
+          "label": "Show full image (no cropping)"
+        },
+        {
+          "value": "cropped",
+          "label": "Fill screen (may crop)"
+        }
+      ],
+      "default": "full"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "slide",
+      "name": "Slide",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Desktop image"
+        },
+        {
+          "type": "text",
+          "id": "image_url",
+          "label": "Image URL",
+          "info": "Use an external image link if no image is uploaded above."
+        },
+        {
+          "type": "image_picker",
+          "id": "mobile_image",
+          "label": "Mobile image (optional)"
+        },
+        {
+          "type": "text",
+          "id": "mobile_image_url",
+          "label": "Mobile image URL (optional)"
+        },
+        {
+          "type": "url",
+          "id": "slide_link",
+          "label": "Slide link",
+          "info": "When clicked, the user will be redirected to this link."
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Tovee Hero Slider",
+      "blocks": [
+        {
+          "type": "slide"
+        },
+        {
+          "type": "slide"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

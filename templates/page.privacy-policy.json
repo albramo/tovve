@@ -1,0 +1,30 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */{
+  "sections": {
+    "main": {
+      "type": "tovee-page",
+      "settings": {
+        "show_banner": false,
+        "eyebrow": "Tovee",
+        "title": "Privacy Policy",
+        "subtitle": "",
+        "content": "<p>At Tovee, we respect your privacy and are committed to protecting your personal information. This policy explains how we collect, use, and safeguard your data when you visit our website or make a purchase.</p><h2>Information We Collect</h2><p>We collect information you provide directly, such as your name, email address, shipping address, and payment details when you place an order or subscribe to our newsletter.</p><h2>How We Use Your Information</h2><ul><li>To process and fulfill your orders</li><li>To send order confirmations and shipping updates</li><li>To respond to your inquiries and provide customer support</li><li>To send marketing communications (only if you opt in)</li><li>To improve our website and product offerings</li></ul><h2>Data Security</h2><p>We implement appropriate security measures to protect your personal information. Payment processing is handled securely through our payment providers.</p><h2>Your Rights</h2><p>You may request access to, correction of, or deletion of your personal data at any time by contacting us through our <a href=\"/pages/contact\">Contact page</a>.</p><h2>Contact</h2><p>For privacy-related questions, please reach out via our Contact page.</p>",
+        "button_label": "",
+        "button_link": "",
+        "background_color": "#FCFAF8",
+        "padding-block-start": 0,
+        "padding-block-end": 0
+      }
+    }
+  },
+  "order": [
+    "main"
+  ]
+}

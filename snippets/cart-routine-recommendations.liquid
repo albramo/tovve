@@ -1,0 +1,514 @@
+{%- liquid
+  assign recommended_products = ""
+  assign limit_count = 5
+  assign items_count = 0
+  
+  assign basis_product = cart.items.first.product
+  if basis_product == blank
+    assign basis_product = collections.all.products.first
+  endif
+  
+  if basis_product != blank
+    assign routine_collection = basis_product.collections.first
+    if routine_collection != blank
+      for prod in routine_collection.products
+        assign already_in_cart = false
+        for item in cart.items
+          if item.product_id == prod.id
+            assign already_in_cart = true
+            break
+          endif
+        endfor
+        
+        unless already_in_cart
+          assign recommended_products = recommended_products | append: prod.handle | append: ","
+          assign items_count = items_count | plus: 1
+        endunless
+        
+        if items_count >= limit_count
+          break
+        endif
+      endfor
+    endif
+  endif
+  
+  if items_count < limit_count
+    for prod in collections.all.products
+      assign already_in_cart = false
+      for item in cart.items
+        if item.product_id == prod.id
+          assign already_in_cart = true
+          break
+        endif
+      endfor
+      
+      assign already_recommended = false
+      assign rec_handles = recommended_products | split: ","
+      for h in rec_handles
+        if h == prod.handle
+          assign already_recommended = true
+          break
+        endif
+      endfor
+      
+      unless already_in_cart or already_recommended
+        assign recommended_products = recommended_products | append: prod.handle | append: ","
+        assign items_count = items_count | plus: 1
+      endunless
+      
+      if items_count >= limit_count
+        break
+      endif
+    endfor
+  endif
+-%}
+
+{%- assign rec_handles = recommended_products | split: "," -%}
+{%- if rec_handles.size > 0 and cart.item_count > 0 -%}
+  <style>
+    /* Cart drawer only — scoped to .cdr-routine so product page styles stay untouched */
+    .cdr-routine {
+      --cdr-border: rgba(var(--color-foreground-rgb), 0.1);
+      --cdr-radius: 12px;
+      --cdr-drawer-padding: var(--cart-drawer-padding, var(--theme-drawer-padding, var(--padding-xl)));
+      flex-shrink: 0;
+      margin: 20px var(--cdr-drawer-padding) 12px;
+      padding: 14px 12px 12px;
+      border-top: 1px solid var(--cdr-border);
+      background: rgba(var(--color-foreground-rgb), 0.025);
+      border-radius: var(--cdr-radius);
+    }
+
+    .cdr-routine__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .cdr-routine__title {
+      font-family: var(--font-heading--family);
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin: 0;
+      padding: 0;
+      color: rgb(var(--color-foreground));
+      letter-spacing: 0.01em;
+      line-height: 1.3;
+    }
+
+    .cdr-routine__viewport {
+      overflow: hidden;
+      position: relative;
+    }
+
+    .cdr-routine__track {
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      scroll-behavior: smooth;
+    }
+
+    .cdr-routine__track::-webkit-scrollbar {
+      display: none;
+    }
+
+    .cdr-routine__slide {
+      flex: 0 0 100%;
+      width: 100%;
+      scroll-snap-align: start;
+    }
+
+    .cdr-routine__item {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      padding: 10px;
+      background: rgb(var(--color-background));
+      border: 1px solid var(--cdr-border);
+      border-radius: 10px;
+      box-sizing: border-box;
+    }
+
+    .cdr-routine__top {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .cdr-routine__image-link {
+      position: relative;
+      flex: 0 0 52px;
+      width: 52px;
+      height: 52px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: rgba(var(--color-foreground-rgb), 0.04);
+    }
+
+    .cdr-routine__image-link img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .cdr-routine__discount-badge {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      background: #d9534f;
+      color: #fff;
+      font-size: 0.55rem;
+      font-weight: 700;
+      padding: 2px 5px;
+      border-radius: 4px;
+      z-index: 1;
+      line-height: 1.2;
+    }
+
+    .cdr-routine__info {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding-top: 2px;
+    }
+
+    .cdr-routine__item-title {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      line-height: 1.35;
+      color: rgb(var(--color-foreground));
+      text-decoration: none;
+      margin: 0;
+    }
+
+    .cdr-routine__item-title:hover {
+      color: rgb(var(--color-button-background));
+    }
+
+    .cdr-routine__item-price {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .cdr-routine__item-price .cdr-routine__current-price {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: rgb(var(--color-foreground));
+    }
+
+    .cdr-routine__item-price .cdr-routine__compare-price {
+      font-size: 0.72rem;
+      color: rgba(var(--color-foreground-rgb), 0.45);
+      text-decoration: line-through;
+    }
+
+    .cdr-routine__action {
+      width: 100%;
+    }
+
+    .cdr-routine__action product-form-component,
+    .cdr-routine__action form {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+    }
+
+    .cdr-routine__form-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .cdr-routine__qty {
+      display: flex;
+      align-items: center;
+      flex: 0 0 88px;
+      height: 34px;
+      border: 1px solid var(--cdr-border);
+      border-radius: 999px;
+      background: rgb(var(--color-background));
+      overflow: hidden;
+    }
+
+    .cdr-routine__qty-btn {
+      width: 28px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: rgb(var(--color-foreground));
+      font-size: 0.95rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0;
+      flex-shrink: 0;
+    }
+
+    .cdr-routine__qty-btn:hover {
+      background: rgba(var(--color-foreground-rgb), 0.05);
+    }
+
+    .cdr-routine__qty-input {
+      flex: 1 1 auto;
+      min-width: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      text-align: center;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: rgb(var(--color-foreground));
+      background: transparent;
+      -moz-appearance: textfield;
+      padding: 0;
+    }
+
+    .cdr-routine__qty-input::-webkit-outer-spin-button,
+    .cdr-routine__qty-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .cdr-routine__qty-input:focus {
+      outline: none;
+    }
+
+    .cdr-routine__btn.add-to-cart-button {
+      flex: 1 1 auto;
+      min-width: 0;
+      height: 34px;
+      padding: 0 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 999px;
+      background: rgb(var(--color-button-background));
+      color: rgb(var(--color-button-text));
+      border: none;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .cdr-routine__btn .add-to-cart-icon {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    .cdr-routine__btn .add-to-cart-text {
+      gap: 5px;
+    }
+
+    .cdr-routine__btn.add-to-cart-button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .cdr-routine__nav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .cdr-routine__arrow {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgb(var(--color-background));
+      border: 1px solid var(--cdr-border);
+      border-radius: 50%;
+      color: rgb(var(--color-foreground));
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease;
+      padding: 0;
+    }
+
+    .cdr-routine__arrow:hover {
+      background: rgba(var(--color-foreground-rgb), 0.06);
+      border-color: rgba(var(--color-foreground-rgb), 0.18);
+    }
+
+    .cdr-routine__arrow svg {
+      width: 11px;
+      height: 11px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .cdr-routine__track {
+        scroll-behavior: auto;
+      }
+    }
+
+    .cdr-routine__arrow:focus-visible,
+    .cdr-routine__qty-btn:focus-visible,
+    .cdr-routine__qty-input:focus-visible,
+    .cdr-routine__btn:focus-visible {
+      outline: 2px solid rgb(var(--color-button-background));
+      outline-offset: 2px;
+    }
+  </style>
+
+  <div class="cdr-routine" data-cdr-routine>
+    <div class="cdr-routine__head">
+      <h3 class="cdr-routine__title">Complete Your Routine</h3>
+      {%- if rec_handles.size > 1 -%}
+        <div class="cdr-routine__nav">
+          <button type="button" class="cdr-routine__arrow" data-cdr-prev aria-label="Previous">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <button type="button" class="cdr-routine__arrow" data-cdr-next aria-label="Next">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+        </div>
+      {%- endif -%}
+    </div>
+
+    <div class="cdr-routine__viewport">
+      <div class="cdr-routine__track" data-cdr-track role="list" aria-label="Recommended products">
+        {%- for handle in rec_handles -%}
+          {%- if handle == blank -%}{%- continue -%}{%- endif -%}
+          {%- assign prod = all_products[handle] -%}
+          {%- if prod == blank -%}{%- continue -%}{%- endif -%}
+          {%- assign prod_variant = prod.selected_or_first_available_variant -%}
+
+          {%- liquid
+            assign can_add_to_cart = false
+            assign add_to_cart_text = 'products.product.sold_out' | t
+            if prod_variant.available
+              assign can_add_to_cart = true
+              assign add_to_cart_text = 'actions.add' | t
+            endif
+            assign product_form_id = 'cdr-form-' | append: prod.id
+          -%}
+
+          <div class="cdr-routine__slide" role="listitem">
+            <div class="cdr-routine__item">
+              <div class="cdr-routine__top">
+                <a href="{{ prod_variant.url }}" class="cdr-routine__image-link">
+                  {%- if prod_variant.compare_at_price > prod_variant.price -%}
+                    {%- assign discount_percent = prod_variant.compare_at_price | minus: prod_variant.price | times: 100 | divided_by: prod_variant.compare_at_price -%}
+                    <span class="cdr-routine__discount-badge">-{{ discount_percent }}%</span>
+                  {%- endif -%}
+                  {%- assign rec_image = prod.featured_media.preview_image | default: prod.featured_image -%}
+                  {%- if rec_image != blank -%}
+                    <img
+                      src="{{ rec_image | image_url: width: 200 }}"
+                      alt="{{ prod.title | escape }}"
+                      loading="lazy"
+                      width="52"
+                      height="52"
+                    >
+                  {%- else -%}
+                    {{ 'product-1' | placeholder_svg_tag: 'cdr-routine__placeholder' }}
+                  {%- endif -%}
+                </a>
+
+                <div class="cdr-routine__info">
+                  <a href="{{ prod_variant.url }}" class="cdr-routine__item-title">{{ prod.title }}</a>
+                  <div class="cdr-routine__item-price">
+                    {%- if prod_variant.compare_at_price > prod_variant.price -%}
+                      <span class="cdr-routine__compare-price">{{ prod_variant.compare_at_price | money }}</span>
+                    {%- endif -%}
+                    <span class="cdr-routine__current-price">{{ prod_variant.price | money }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="cdr-routine__action">
+                <product-form-component
+                  data-section-id="cart-drawer-section"
+                  data-product-id="{{ prod.id }}"
+                  data-product-url="{{ prod.url }}"
+                  data-quantity-default="1"
+                  on:submit="/handleSubmit"
+                >
+                  {%- form 'product', prod, id: product_form_id, novalidate: 'novalidate', data-type: 'add-to-cart-form' -%}
+                    <input type="hidden" name="id" ref="variantId" value="{{ prod_variant.id }}">
+                    <div class="cdr-routine__form-row">
+                      <div class="cdr-routine__qty">
+                        <button type="button" class="cdr-routine__qty-btn" onclick="this.nextElementSibling.value=Math.max(1,+this.nextElementSibling.value-1)" aria-label="Decrease quantity">−</button>
+                        <input type="number" name="quantity" value="1" min="1" class="cdr-routine__qty-input" aria-label="Quantity">
+                        <button type="button" class="cdr-routine__qty-btn" onclick="this.previousElementSibling.value=+this.previousElementSibling.value+1" aria-label="Increase quantity">+</button>
+                      </div>
+                      <div class="visually-hidden" ref="liveRegion" role="status" aria-live="assertive" aria-atomic="true"></div>
+                      {% render 'add-to-cart-button',
+                        add_to_cart_text: add_to_cart_text,
+                        class: 'cdr-routine__btn add-to-cart-button',
+                        can_add_to_cart: can_add_to_cart,
+                        product: prod
+                      %}
+                    </div>
+                  {%- endform -%}
+                </product-form-component>
+              </div>
+            </div>
+          </div>
+        {%- endfor -%}
+      </div>
+    </div>
+  </div>
+
+  {%- if rec_handles.size > 1 -%}
+    <script>
+      (function() {
+        'use strict';
+
+        const initCdrNav = () => {
+          const root = document.querySelector('[data-cdr-routine]');
+          if (!root) return;
+
+          const track = root.querySelector('[data-cdr-track]');
+          const prevBtn = root.querySelector('[data-cdr-prev]');
+          const nextBtn = root.querySelector('[data-cdr-next]');
+          if (!track || track.dataset.cdrBound) return;
+          track.dataset.cdrBound = 'true';
+
+          const scrollByOne = (dir) => {
+            const slide = track.querySelector('.cdr-routine__slide');
+            const width = slide ? slide.getBoundingClientRect().width : track.clientWidth;
+            track.scrollBy({ left: dir * width, behavior: 'smooth' });
+          };
+
+          prevBtn?.addEventListener('click', () => scrollByOne(-1));
+          nextBtn?.addEventListener('click', () => scrollByOne(1));
+        };
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initCdrNav);
+        } else {
+          initCdrNav();
+        }
+
+        document.addEventListener('cart:updated', () => setTimeout(initCdrNav, 200));
+
+        const drawer = document.getElementById('cart-drawer');
+        if (drawer) {
+          new MutationObserver(() => setTimeout(initCdrNav, 100)).observe(drawer, { attributes: true, childList: true, subtree: true });
+        }
+      })();
+    </script>
+  {%- endif -%}
+{%- endif -%}
