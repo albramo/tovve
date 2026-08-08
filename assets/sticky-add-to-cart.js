@@ -122,11 +122,6 @@ class StickyAddToCartComponent extends Component {
   };
 
   #updateStickyBarState() {
-    // Retry finding and observing the target button if it was missing initially (lazy initialization check)
-    if (!this.#targetAddToCartButton) {
-      this.#setupIntersectionObserver();
-    }
-
     if (this.#isCartDrawerOpen() || this.#isTargetButtonVisible()) {
       this.#hideStickyBar();
     } else {
@@ -194,7 +189,22 @@ class StickyAddToCartComponent extends Component {
   }
 
   #isTargetButtonVisible() {
+    if (!this.#targetAddToCartButton) {
+      const productForm = this.#getProductForm();
+      if (productForm) {
+        this.#targetAddToCartButton = productForm.querySelector('[ref="addToCartButton"]') || productForm.querySelector('button[name="add"]') || productForm.querySelector('.add-to-cart-button');
+      }
+      if (!this.#targetAddToCartButton) {
+        this.#targetAddToCartButton = document.querySelector('.product-details [ref="addToCartButton"]') || document.querySelector('.product-details button[name="add"]');
+      }
+      // If dynamically/lazily resolved, initialize the IntersectionObserver to start tracking performance-friendly visibility
+      if (this.#targetAddToCartButton) {
+        this.#setupIntersectionObserver();
+      }
+    }
     if (!this.#targetAddToCartButton) return false;
+
+    // Optimized: Avoid layout thrashing by returning the cached intersection state instead of getBoundingClientRect()
     return this.#isTargetButtonIntersecting;
   }
 

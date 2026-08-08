@@ -544,10 +544,13 @@
               if (next) {
                 next.style.opacity = '0';
                 next.classList.remove('thumbnail-gallery__main-image-wrapper--hidden');
-                // Trigger reflow
-                next.getBoundingClientRect();
-                next.style.transition = 'opacity 0.35s ease';
-                next.style.opacity = '1';
+                // Optimized: Trigger transition using double requestAnimationFrame to prevent layout thrashing (forced synchronous layout reflow)
+                requestAnimationFrame(() => {
+                  requestAnimationFrame(() => {
+                    next.style.transition = 'opacity 0.35s ease';
+                    next.style.opacity = '1';
+                  });
+                });
               }
 
               setTimeout(() => {
