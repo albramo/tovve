@@ -69,6 +69,12 @@ class StickyAddToCartComponent extends Component {
   /** @type {boolean} */
   #hiddenByBottom = false;
 
+  /** @type {boolean} Track if the target button is visible in the viewport using IntersectionObserver */
+  #isTargetButtonIntersecting = true;
+
+  /** @type {number | null} requestAnimationFrame handle for throttled scroll check */
+  #scrollRafId = null;
+
   connectedCallback() {
     super.connectedCallback();
 
@@ -101,15 +107,32 @@ class StickyAddToCartComponent extends Component {
     if (this.#animationTimeout) {
       clearTimeout(this.#animationTimeout);
     }
+    if (this.#scrollRafId !== null) {
+      cancelAnimationFrame(this.#scrollRafId);
+    }
   }
 
   #handleScroll = () => {
+    if (this.#scrollRafId !== null) return;
+
+    this.#scrollRafId = requestAnimationFrame(() => {
+      this.#scrollRafId = null;
+      this.#updateStickyBarState();
+    });
+  };
+
+  #updateStickyBarState() {
+    // Retry finding and observing the target button if it was missing initially (lazy initialization check)
+    if (!this.#targetAddToCartButton) {
+      this.#setupIntersectionObserver();
+    }
+
     if (this.#isCartDrawerOpen() || this.#isTargetButtonVisible()) {
       this.#hideStickyBar();
     } else {
       this.#showStickyBar();
     }
-  };
+  }
 
   /**
    * Sets up the IntersectionObserver to watch the buy buttons visibility.
@@ -129,6 +152,7 @@ class StickyAddToCartComponent extends Component {
     if (this.#targetAddToCartButton) {
       this.#buyButtonsIntersectionObserver = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
+          this.#isTargetButtonIntersecting = entry.isIntersecting;
           if (entry.isIntersecting || this.#isCartDrawerOpen()) {
             this.#hideStickyBar();
           } else {
@@ -170,19 +194,8 @@ class StickyAddToCartComponent extends Component {
   }
 
   #isTargetButtonVisible() {
-    if (!this.#targetAddToCartButton) {
-      const productForm = this.#getProductForm();
-      if (productForm) {
-        this.#targetAddToCartButton = productForm.querySelector('[ref="addToCartButton"]') || productForm.querySelector('button[name="add"]') || productForm.querySelector('.add-to-cart-button');
-      }
-      if (!this.#targetAddToCartButton) {
-        this.#targetAddToCartButton = document.querySelector('.product-details [ref="addToCartButton"]') || document.querySelector('.product-details button[name="add"]');
-      }
-    }
     if (!this.#targetAddToCartButton) return false;
-
-    const rect = this.#targetAddToCartButton.getBoundingClientRect();
-    return rect.top < window.innerHeight && rect.bottom > 0;
+    return this.#isTargetButtonIntersecting;
   }
 
   // Public action handlers
